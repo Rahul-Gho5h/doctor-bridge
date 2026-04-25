@@ -81,6 +81,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [timedOut, setTimedOut] = useState(false);
   const [docVerified, setDocVerified] = useState<boolean | null>(null);
+  const [hospitalName, setHospitalName] = useState<string | null>(null);
 
   // Derived role/account values — declared before any useEffect that references them
   const accountType: AccountType = profile?.account_type ?? "clinic_staff";
@@ -125,6 +126,21 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         if (data) setDocVerified(data.nmc_verified ?? false);
       });
   }, [user, profile]);
+
+  // Fetch the doctor's current active hospital name
+  useEffect(() => {
+    if (!user || accountType !== "doctor") return;
+    supabase
+      .from("hospital_doctor_links")
+      .select("clinics(name)")
+      .eq("doctor_user_id", user.id)
+      .eq("status", "ACTIVE")
+      .maybeSingle()
+      .then(({ data }) => {
+        const name = (data as any)?.clinics?.name ?? null;
+        setHospitalName(name);
+      });
+  }, [user, accountType]);
 
   // Close mobile drawer on route change
   useEffect(() => { setMobileOpen(false); }, [pathname]);
@@ -267,7 +283,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               {isClinicAdmin
                 ? "Clinic admin workspace"
                 : accountType === "doctor"
-                  ? "Independent practice"
+                  ? (hospitalName ?? "Independent practice")
                   : accountType === "hospital_admin"
                     ? "Hospital admin workspace"
                     : "Clinic workspace"}
