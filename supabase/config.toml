@@ -1,0 +1,7 @@
+project_id = "hkzsxmzcqrxptqvyplwn"
+
+[functions.register-clinic]
+verify_jwt = false
+
+[functions.seed-demo]
+verify_jwt = false
