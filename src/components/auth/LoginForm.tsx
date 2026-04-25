@@ -39,17 +39,29 @@ export function LoginForm() {
 
     toast.success("Welcome back");
 
-    // Redirect clinic admins to their dedicated dashboard
     if (data.user) {
-      const { data: roleRows } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", data.user.id);
+      // Fetch roles and account_type in parallel
+      const [{ data: roleRows }, { data: profileData }] = await Promise.all([
+        supabase.from("user_roles").select("role").eq("user_id", data.user.id),
+        supabase.from("profiles").select("account_type").eq("id", data.user.id).maybeSingle(),
+      ]);
       const roles = (roleRows ?? []).map((r) => r.role as string);
+
+      // clinic_admin → dedicated admin dashboard
       if (roles.includes("clinic_admin")) {
         router.navigate({ to: "/admin/dashboard" });
         return;
       }
+
+      // doctor → main dashboard
+      if (profileData?.account_type === "doctor") {
+        router.navigate({ to: "/dashboard" });
+        return;
+      }
+
+      // everyone else → main dashboard
+      router.navigate({ to: "/dashboard" });
+      return;
     }
 
     router.navigate({ to: "/dashboard" });
