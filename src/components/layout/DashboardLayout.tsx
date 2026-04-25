@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 import {
   LayoutDashboard, Users, Calendar, FileText, Search, Send, UserCircle,
   Receipt, UserCog, Package, BarChart3, Settings, LogOut, Menu, X,
-  Building2, Inbox, MessageSquare, MessageSquareMore, ShieldAlert,
+  Building2, Inbox, MessageSquare, MessageSquareMore, ShieldAlert, ShieldCheck,
+  Stethoscope, LineChart, ClipboardList,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, type AppRole, type AccountType } from "@/hooks/useAuth";
@@ -32,8 +33,8 @@ interface NavSection { title: string; items: NavItem[] }
 const SECTIONS: NavSection[] = [
   // ── Doctor / Hospital admin sections ────────────────────────────────────────
   { title: "Overview", items: [
-    // Regular dashboard — hidden from clinic_admin (they get /admin/dashboard below)
-    { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, hideForRoles: ["clinic_admin"] },
+    // Regular dashboard — hidden from clinic_admin and super_admin (they get their own dashboards)
+    { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, hideForRoles: ["clinic_admin", "super_admin"] },
   ]},
   { title: "Referral Network", items: [
     { to: "/doctors",     label: "Find Specialists",  icon: Search,          accountTypes: ["doctor", "hospital_admin"] },
@@ -42,15 +43,15 @@ const SECTIONS: NavSection[] = [
     { to: "/messages",    label: "Messages",          icon: MessageSquare,   accountTypes: ["doctor", "hospital_admin"] },
   ]},
   { title: "Clinical", items: [
-    { to: "/patients", label: "Patients", icon: Users,     hideForAccountTypes: ["hospital_admin"], hideForRoles: ["clinic_admin"] },
-    { to: "/emr",      label: "EMR",      icon: FileText,  hideForAccountTypes: ["hospital_admin"], hideForRoles: ["clinic_admin"] },
+    { to: "/patients", label: "Patients", icon: Users,     hideForAccountTypes: ["hospital_admin"], hideForRoles: ["clinic_admin", "super_admin"] },
+    { to: "/emr",      label: "EMR",      icon: FileText,  hideForAccountTypes: ["hospital_admin"], hideForRoles: ["clinic_admin", "super_admin"] },
   ]},
   { title: "My Practice", items: [
     { to: "/profile",      label: "My Profile",  icon: UserCircle, accountTypes: ["doctor"] },
     { to: "/availability", label: "Availability", icon: Calendar,  accountTypes: ["doctor"] },
     { to: "/cme",          label: "CME / CPD",   icon: BarChart3, accountTypes: ["doctor"] },
-    { to: "/analytics",    label: "Analytics",   icon: BarChart3, hideForRoles: ["clinic_admin"] },
-    { to: "/settings",     label: "Settings",    icon: Settings,  hideForAccountTypes: ["hospital_admin"], hideForRoles: ["clinic_admin"] },
+    { to: "/analytics",    label: "Analytics",   icon: BarChart3, hideForRoles: ["clinic_admin", "super_admin"] },
+    { to: "/settings",     label: "Settings",    icon: Settings,  hideForAccountTypes: ["hospital_admin"], hideForRoles: ["clinic_admin", "super_admin"] },
   ]},
   { title: "Hospital", items: [
     { to: "/hospital/doctors", label: "My Doctors",           icon: Users,     accountTypes: ["hospital_admin"] },
@@ -72,6 +73,14 @@ const SECTIONS: NavSection[] = [
     { to: "/analytics", label: "Analytics", icon: BarChart3, roles: ["clinic_admin"] },
     { to: "/settings",  label: "Settings",  icon: Settings,  roles: ["clinic_admin"] },
   ]},
+  // ── Platform Admin section — only visible to super_admin role ────────────────
+  { title: "Platform Admin", items: [
+    { to: "/platform",               label: "Overview",      icon: ShieldCheck,    roles: ["super_admin"] },
+    { to: "/platform/institutions",  label: "Institutions",  icon: Building2,      roles: ["super_admin"] },
+    { to: "/platform/doctors",       label: "Doctors",       icon: Stethoscope,    roles: ["super_admin"] },
+    { to: "/platform/analytics",     label: "Analytics",     icon: LineChart,      roles: ["super_admin"] },
+    { to: "/platform/reports",       label: "Reports",       icon: ClipboardList,  roles: ["super_admin"] },
+  ]},
 ];
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -85,6 +94,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   // Derived role/account values — declared before any useEffect that references them
   const accountType: AccountType = profile?.account_type ?? "clinic_staff";
   const isClinicAdmin = roles.includes("clinic_admin");
+  const isSuperAdmin = roles.includes("super_admin");
 
   // Safety valve: if auth hasn't resolved in 8s, stop spinning and redirect
   useEffect(() => {
@@ -111,6 +121,19 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     const blocked = CLINIC_ADMIN_BLOCKED.some((prefix) => pathname.startsWith(prefix));
     if (blocked) router.navigate({ to: "/admin/dashboard" });
   }, [loading, isClinicAdmin, pathname, router]);
+
+  // Role guard: super_admin cannot access clinical / doctor / admin routes
+  const SUPER_ADMIN_BLOCKED = [
+    "/dashboard", "/patients", "/emr", "/referrals", "/doctors",
+    "/profile", "/availability", "/cme", "/admin",
+    "/messages", "/discussions", "/analytics", "/settings",
+    "/hospital", "/affiliations", "/appointments", "/billing", "/staff", "/inventory",
+  ];
+  useEffect(() => {
+    if (loading || !isSuperAdmin) return;
+    const blocked = SUPER_ADMIN_BLOCKED.some((prefix) => pathname.startsWith(prefix));
+    if (blocked) router.navigate({ to: "/platform" });
+  }, [loading, isSuperAdmin, pathname, router]);
 
   // Check if a doctor has completed identity verification
   useEffect(() => {
@@ -176,7 +199,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const SidebarBody = (
     <>
       <div className="flex h-16 items-center gap-2 border-b border-sidebar-border px-4 text-sidebar-foreground">
-        <BrandLogo size="sm" to={isClinicAdmin ? "/admin/dashboard" : "/dashboard"} />
+        <BrandLogo size="sm" to={isSuperAdmin ? "/platform" : isClinicAdmin ? "/admin/dashboard" : "/dashboard"} />
       </div>
       <nav className="flex-1 overflow-y-auto px-3 py-4">
         {SECTIONS.map((section) => {
@@ -190,7 +213,12 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               <ul className="space-y-0.5">
                 {items.map((item) => {
                   const Icon = item.icon;
-                  const active = pathname.startsWith(item.to);
+                  // Index routes must match exactly — otherwise /platform highlights
+                  // when on /platform/doctors, /dashboard highlights on sub-routes, etc.
+                  const EXACT_ROUTES = ["/platform", "/dashboard", "/admin/dashboard"];
+                  const active = EXACT_ROUTES.includes(item.to)
+                    ? pathname === item.to
+                    : pathname.startsWith(item.to);
                   return (
                     <li key={item.to + item.label}>
                       <Link
@@ -223,7 +251,13 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               {profile.first_name} {profile.last_name}
             </div>
             <span className="inline-block rounded-full border border-sidebar-foreground/20 bg-sidebar-foreground/10 px-2 py-0.5 text-[10px] font-semibold text-sidebar-foreground/80">
-              {accountType === "doctor" ? "Doctor" : accountType === "hospital_admin" ? "Hospital" : "Clinic"}
+              {isSuperAdmin
+                ? "Platform Admin"
+                : accountType === "doctor"
+                  ? "Doctor"
+                  : accountType === "hospital_admin"
+                    ? "Hospital"
+                    : "Clinic"}
             </span>
           </div>
           <Button variant="ghost" size="icon" onClick={handleLogout} aria-label="Sign out">
@@ -264,16 +298,20 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           </Sheet>
           <div className="flex-1 py-3">
             <div className="text-sm font-semibold text-primary">
-              {isClinicAdmin
-                ? "Clinic admin workspace"
-                : accountType === "doctor"
-                  ? (hospitalName ?? "Independent practice")
-                  : accountType === "hospital_admin"
-                    ? "Hospital admin workspace"
-                    : "Clinic workspace"}
+              {isSuperAdmin
+                ? "Doctor Bridge Platform"
+                : isClinicAdmin
+                  ? "Clinic admin workspace"
+                  : accountType === "doctor"
+                    ? (hospitalName ?? "Independent practice")
+                    : accountType === "hospital_admin"
+                      ? "Hospital admin workspace"
+                      : "Clinic workspace"}
             </div>
             <div className="text-xs text-muted-foreground">
-              India defaults: INR, Asia/Kolkata, verified doctors only
+              {isSuperAdmin
+                ? "Internal platform administration"
+                : "India defaults: INR, Asia/Kolkata, verified doctors only"}
             </div>
           </div>
           <div className="flex items-center gap-2 py-3">

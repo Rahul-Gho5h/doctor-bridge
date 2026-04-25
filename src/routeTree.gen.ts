@@ -16,6 +16,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ReferralsRouteImport } from './routes/referrals'
 import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as PlatformRouteImport } from './routes/platform'
 import { Route as PatientsRouteImport } from './routes/patients'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as MessagesRouteImport } from './routes/messages'
@@ -35,10 +36,15 @@ import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as AffiliationsRouteImport } from './routes/affiliations'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ReferralsIndexRouteImport } from './routes/referrals.index'
+import { Route as PlatformIndexRouteImport } from './routes/platform.index'
 import { Route as PatientsIndexRouteImport } from './routes/patients.index'
 import { Route as DoctorsIndexRouteImport } from './routes/doctors.index'
 import { Route as ReferralsNewRouteImport } from './routes/referrals.new'
 import { Route as ReferralsReferralIdRouteImport } from './routes/referrals.$referralId'
+import { Route as PlatformReportsRouteImport } from './routes/platform.reports'
+import { Route as PlatformInstitutionsRouteImport } from './routes/platform.institutions'
+import { Route as PlatformDoctorsRouteImport } from './routes/platform.doctors'
+import { Route as PlatformAnalyticsRouteImport } from './routes/platform.analytics'
 import { Route as PatientsPatientIdRouteImport } from './routes/patients.$patientId'
 import { Route as OnboardingPendingRouteImport } from './routes/onboarding_.pending'
 import { Route as HospitalDoctorsRouteImport } from './routes/hospital.doctors'
@@ -79,6 +85,11 @@ const ReferralsRoute = ReferralsRouteImport.update({
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlatformRoute = PlatformRouteImport.update({
+  id: '/platform',
+  path: '/platform',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PatientsRoute = PatientsRouteImport.update({
@@ -176,6 +187,11 @@ const ReferralsIndexRoute = ReferralsIndexRouteImport.update({
   path: '/',
   getParentRoute: () => ReferralsRoute,
 } as any)
+const PlatformIndexRoute = PlatformIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => PlatformRoute,
+} as any)
 const PatientsIndexRoute = PatientsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -195,6 +211,26 @@ const ReferralsReferralIdRoute = ReferralsReferralIdRouteImport.update({
   id: '/$referralId',
   path: '/$referralId',
   getParentRoute: () => ReferralsRoute,
+} as any)
+const PlatformReportsRoute = PlatformReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => PlatformRoute,
+} as any)
+const PlatformInstitutionsRoute = PlatformInstitutionsRouteImport.update({
+  id: '/institutions',
+  path: '/institutions',
+  getParentRoute: () => PlatformRoute,
+} as any)
+const PlatformDoctorsRoute = PlatformDoctorsRouteImport.update({
+  id: '/doctors',
+  path: '/doctors',
+  getParentRoute: () => PlatformRoute,
+} as any)
+const PlatformAnalyticsRoute = PlatformAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => PlatformRoute,
 } as any)
 const PatientsPatientIdRoute = PatientsPatientIdRouteImport.update({
   id: '/$patientId',
@@ -246,6 +282,7 @@ export interface FileRoutesByFullPath {
   '/messages': typeof MessagesRoute
   '/onboarding': typeof OnboardingRoute
   '/patients': typeof PatientsRouteWithChildren
+  '/platform': typeof PlatformRouteWithChildren
   '/profile': typeof ProfileRoute
   '/referrals': typeof ReferralsRouteWithChildren
   '/register': typeof RegisterRoute
@@ -259,10 +296,15 @@ export interface FileRoutesByFullPath {
   '/hospital/doctors': typeof HospitalDoctorsRoute
   '/onboarding/pending': typeof OnboardingPendingRoute
   '/patients/$patientId': typeof PatientsPatientIdRoute
+  '/platform/analytics': typeof PlatformAnalyticsRoute
+  '/platform/doctors': typeof PlatformDoctorsRoute
+  '/platform/institutions': typeof PlatformInstitutionsRoute
+  '/platform/reports': typeof PlatformReportsRoute
   '/referrals/$referralId': typeof ReferralsReferralIdRoute
   '/referrals/new': typeof ReferralsNewRoute
   '/doctors/': typeof DoctorsIndexRoute
   '/patients/': typeof PatientsIndexRoute
+  '/platform/': typeof PlatformIndexRoute
   '/referrals/': typeof ReferralsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -294,10 +336,15 @@ export interface FileRoutesByTo {
   '/hospital/doctors': typeof HospitalDoctorsRoute
   '/onboarding/pending': typeof OnboardingPendingRoute
   '/patients/$patientId': typeof PatientsPatientIdRoute
+  '/platform/analytics': typeof PlatformAnalyticsRoute
+  '/platform/doctors': typeof PlatformDoctorsRoute
+  '/platform/institutions': typeof PlatformInstitutionsRoute
+  '/platform/reports': typeof PlatformReportsRoute
   '/referrals/$referralId': typeof ReferralsReferralIdRoute
   '/referrals/new': typeof ReferralsNewRoute
   '/doctors': typeof DoctorsIndexRoute
   '/patients': typeof PatientsIndexRoute
+  '/platform': typeof PlatformIndexRoute
   '/referrals': typeof ReferralsIndexRoute
 }
 export interface FileRoutesById {
@@ -320,6 +367,7 @@ export interface FileRoutesById {
   '/messages': typeof MessagesRoute
   '/onboarding': typeof OnboardingRoute
   '/patients': typeof PatientsRouteWithChildren
+  '/platform': typeof PlatformRouteWithChildren
   '/profile': typeof ProfileRoute
   '/referrals': typeof ReferralsRouteWithChildren
   '/register': typeof RegisterRoute
@@ -333,10 +381,15 @@ export interface FileRoutesById {
   '/hospital/doctors': typeof HospitalDoctorsRoute
   '/onboarding_/pending': typeof OnboardingPendingRoute
   '/patients/$patientId': typeof PatientsPatientIdRoute
+  '/platform/analytics': typeof PlatformAnalyticsRoute
+  '/platform/doctors': typeof PlatformDoctorsRoute
+  '/platform/institutions': typeof PlatformInstitutionsRoute
+  '/platform/reports': typeof PlatformReportsRoute
   '/referrals/$referralId': typeof ReferralsReferralIdRoute
   '/referrals/new': typeof ReferralsNewRoute
   '/doctors/': typeof DoctorsIndexRoute
   '/patients/': typeof PatientsIndexRoute
+  '/platform/': typeof PlatformIndexRoute
   '/referrals/': typeof ReferralsIndexRoute
 }
 export interface FileRouteTypes {
@@ -360,6 +413,7 @@ export interface FileRouteTypes {
     | '/messages'
     | '/onboarding'
     | '/patients'
+    | '/platform'
     | '/profile'
     | '/referrals'
     | '/register'
@@ -373,10 +427,15 @@ export interface FileRouteTypes {
     | '/hospital/doctors'
     | '/onboarding/pending'
     | '/patients/$patientId'
+    | '/platform/analytics'
+    | '/platform/doctors'
+    | '/platform/institutions'
+    | '/platform/reports'
     | '/referrals/$referralId'
     | '/referrals/new'
     | '/doctors/'
     | '/patients/'
+    | '/platform/'
     | '/referrals/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -408,10 +467,15 @@ export interface FileRouteTypes {
     | '/hospital/doctors'
     | '/onboarding/pending'
     | '/patients/$patientId'
+    | '/platform/analytics'
+    | '/platform/doctors'
+    | '/platform/institutions'
+    | '/platform/reports'
     | '/referrals/$referralId'
     | '/referrals/new'
     | '/doctors'
     | '/patients'
+    | '/platform'
     | '/referrals'
   id:
     | '__root__'
@@ -433,6 +497,7 @@ export interface FileRouteTypes {
     | '/messages'
     | '/onboarding'
     | '/patients'
+    | '/platform'
     | '/profile'
     | '/referrals'
     | '/register'
@@ -446,10 +511,15 @@ export interface FileRouteTypes {
     | '/hospital/doctors'
     | '/onboarding_/pending'
     | '/patients/$patientId'
+    | '/platform/analytics'
+    | '/platform/doctors'
+    | '/platform/institutions'
+    | '/platform/reports'
     | '/referrals/$referralId'
     | '/referrals/new'
     | '/doctors/'
     | '/patients/'
+    | '/platform/'
     | '/referrals/'
   fileRoutesById: FileRoutesById
 }
@@ -472,6 +542,7 @@ export interface RootRouteChildren {
   MessagesRoute: typeof MessagesRoute
   OnboardingRoute: typeof OnboardingRoute
   PatientsRoute: typeof PatientsRouteWithChildren
+  PlatformRoute: typeof PlatformRouteWithChildren
   ProfileRoute: typeof ProfileRoute
   ReferralsRoute: typeof ReferralsRouteWithChildren
   RegisterRoute: typeof RegisterRoute
@@ -534,6 +605,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/platform': {
+      id: '/platform'
+      path: '/platform'
+      fullPath: '/platform'
+      preLoaderRoute: typeof PlatformRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/patients': {
@@ -669,6 +747,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReferralsIndexRouteImport
       parentRoute: typeof ReferralsRoute
     }
+    '/platform/': {
+      id: '/platform/'
+      path: '/'
+      fullPath: '/platform/'
+      preLoaderRoute: typeof PlatformIndexRouteImport
+      parentRoute: typeof PlatformRoute
+    }
     '/patients/': {
       id: '/patients/'
       path: '/'
@@ -696,6 +781,34 @@ declare module '@tanstack/react-router' {
       fullPath: '/referrals/$referralId'
       preLoaderRoute: typeof ReferralsReferralIdRouteImport
       parentRoute: typeof ReferralsRoute
+    }
+    '/platform/reports': {
+      id: '/platform/reports'
+      path: '/reports'
+      fullPath: '/platform/reports'
+      preLoaderRoute: typeof PlatformReportsRouteImport
+      parentRoute: typeof PlatformRoute
+    }
+    '/platform/institutions': {
+      id: '/platform/institutions'
+      path: '/institutions'
+      fullPath: '/platform/institutions'
+      preLoaderRoute: typeof PlatformInstitutionsRouteImport
+      parentRoute: typeof PlatformRoute
+    }
+    '/platform/doctors': {
+      id: '/platform/doctors'
+      path: '/doctors'
+      fullPath: '/platform/doctors'
+      preLoaderRoute: typeof PlatformDoctorsRouteImport
+      parentRoute: typeof PlatformRoute
+    }
+    '/platform/analytics': {
+      id: '/platform/analytics'
+      path: '/analytics'
+      fullPath: '/platform/analytics'
+      preLoaderRoute: typeof PlatformAnalyticsRouteImport
+      parentRoute: typeof PlatformRoute
     }
     '/patients/$patientId': {
       id: '/patients/$patientId'
@@ -769,6 +882,26 @@ const PatientsRouteWithChildren = PatientsRoute._addFileChildren(
   PatientsRouteChildren,
 )
 
+interface PlatformRouteChildren {
+  PlatformAnalyticsRoute: typeof PlatformAnalyticsRoute
+  PlatformDoctorsRoute: typeof PlatformDoctorsRoute
+  PlatformInstitutionsRoute: typeof PlatformInstitutionsRoute
+  PlatformReportsRoute: typeof PlatformReportsRoute
+  PlatformIndexRoute: typeof PlatformIndexRoute
+}
+
+const PlatformRouteChildren: PlatformRouteChildren = {
+  PlatformAnalyticsRoute: PlatformAnalyticsRoute,
+  PlatformDoctorsRoute: PlatformDoctorsRoute,
+  PlatformInstitutionsRoute: PlatformInstitutionsRoute,
+  PlatformReportsRoute: PlatformReportsRoute,
+  PlatformIndexRoute: PlatformIndexRoute,
+}
+
+const PlatformRouteWithChildren = PlatformRoute._addFileChildren(
+  PlatformRouteChildren,
+)
+
 interface ReferralsRouteChildren {
   ReferralsReferralIdRoute: typeof ReferralsReferralIdRoute
   ReferralsNewRoute: typeof ReferralsNewRoute
@@ -804,6 +937,7 @@ const rootRouteChildren: RootRouteChildren = {
   MessagesRoute: MessagesRoute,
   OnboardingRoute: OnboardingRoute,
   PatientsRoute: PatientsRouteWithChildren,
+  PlatformRoute: PlatformRouteWithChildren,
   ProfileRoute: ProfileRoute,
   ReferralsRoute: ReferralsRouteWithChildren,
   RegisterRoute: RegisterRoute,

@@ -47,6 +47,12 @@ export function LoginForm() {
       ]);
       const roles = (roleRows ?? []).map((r) => r.role as string);
 
+      // super_admin → platform admin panel
+      if (roles.includes("super_admin")) {
+        router.navigate({ to: "/platform" });
+        return;
+      }
+
       // clinic_admin → dedicated admin dashboard
       if (roles.includes("clinic_admin")) {
         router.navigate({ to: "/admin/dashboard" });
