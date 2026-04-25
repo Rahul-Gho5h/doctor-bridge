@@ -466,13 +466,13 @@ function OnboardDoctorModal({ clinicId, onCreated }: { clinicId: string; onCreat
             Authorization: `Bearer ${session.access_token}`,
           },
           body: JSON.stringify({
-            firstName: preview?.firstName ?? "",
-            lastName: preview?.lastName ?? "",
-            email: creds.email,
-            password: creds.tempPassword,
-            nmcNumber: creds.nmcNumber,
-            specialization: preview?.specialization ?? "",
-            hospitalClinicId: clinicId,
+            email:        creds.email,
+            tempPassword: creds.tempPassword,
+            userId:       creds.userId,
+            nmcNumber:    creds.nmcNumber,
+            firstName:    preview?.firstName ?? "",
+            lastName:     preview?.lastName ?? "",
+            clinicId:     clinicId,
           }),
         }
       );
