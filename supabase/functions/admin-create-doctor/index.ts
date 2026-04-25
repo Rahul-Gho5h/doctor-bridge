@@ -197,8 +197,9 @@ Deno.serve(async (req) => {
           nmc_verified_at: now,
           qualifications: qualifications ?? [],
           sub_specialties: [],
-          is_public: false,
-          accepting_referrals: false,
+          is_public: true,
+          accepting_referrals: true,
+          profile_completeness: 0,
         })
         .select("id")
         .single();

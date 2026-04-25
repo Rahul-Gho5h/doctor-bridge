@@ -34,7 +34,14 @@
       "Bash(node -e \"require\\('@hookform/resolvers'\\)\")",
       "Bash(echo \"EXIT:$?\")",
       "Bash(ls src/routeTree*)",
-      "Bash(find src *)"
+      "Bash(find src *)",
+      "Bash(iconv -f UTF-16LE -t UTF-8 \"C:\\\\Users\\\\Rahul Ghosh\\\\Documents\\\\Agentica Company\\\\Products\\\\doctorlink-pro-main\\\\doctorlink-pro-main/src/integrations/supabase/types.ts\")",
+      "PowerShell($content = Get-Content 'C:\\\\Users\\\\Rahul Ghosh\\\\Documents\\\\Agentica Company\\\\Products\\\\doctorlink-pro-main\\\\doctorlink-pro-main\\\\src\\\\integrations\\\\supabase\\\\types.ts' -Raw; $text = $content -replace '\\\\r\\\\n', \"`n\"; $idx = $text.IndexOf\\('referrals: {'\\); if \\($idx -ge 0\\) { $text.Substring\\($idx, [Math]::Min\\(4000, $text.Length - $idx\\)\\) } else { \"Not found\" })",
+      "PowerShell($content = Get-Content 'C:\\\\Users\\\\Rahul Ghosh\\\\Documents\\\\Agentica Company\\\\Products\\\\doctorlink-pro-main\\\\doctorlink-pro-main\\\\src\\\\integrations\\\\supabase\\\\types.ts' -Raw; $text = $content -replace '\\\\r\\\\n', \"`n\"; $idx = $text.IndexOf\\('referrals: {'\\); if \\($idx -ge 0\\) { $text.Substring\\($idx, [Math]::Min\\(6500, $text.Length - $idx\\)\\) } else { \"Not found\" })",
+      "Bash(supabase functions *)",
+      "PowerShell(Get-Command npx -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-Command supabase -ErrorAction SilentlyContinue)",
+      "PowerShell($env:PATH -split \";\" | ForEach-Object { if \\(Test-Path \"$_\\\\supabase.exe\"\\) { \"$_\\\\supabase.exe\" } elseif \\(Test-Path \"$_\\\\supabase\"\\) { \"$_\\\\supabase\" } })"
     ]
   }
 }

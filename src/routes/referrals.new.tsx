@@ -39,6 +39,7 @@ export const Route = createFileRoute("/referrals/new")({
 interface PatientLite {
   id: string; display_id: string; first_name: string; last_name: string;
   date_of_birth: string; gender: string; phone: string; chronic_conditions: string[];
+  allergies: string[]; current_medications: string[];
 }
 
 interface DoctorLite {
@@ -94,7 +95,7 @@ function NewReferralPage() {
     if (!user || !profile) return;
     (async () => {
       const [{ data: pts }, { data: docs }, { data: meDoc }, { data: clinic }] = await Promise.all([
-        supabase.from("global_patients").select("id,display_id,first_name,last_name,date_of_birth,gender,phone,chronic_conditions").order("first_name"),
+        supabase.from("global_patients").select("id,display_id,first_name,last_name,date_of_birth,gender,phone,chronic_conditions,allergies,current_medications").order("first_name"),
         supabase.from("doctor_profiles").select("id,user_id,clinic_id,nmc_number").eq("is_public", true),
         supabase.from("doctor_profiles").select("id").eq("user_id", user.id).maybeSingle(),
         profile.clinic_id
@@ -226,6 +227,8 @@ function NewReferralPage() {
         mrn: selectedPatient.display_id,
         phone: selectedPatient.phone,
         chronic_conditions: selectedPatient.chronic_conditions,
+        allergies: selectedPatient.allergies ?? [],
+        current_medications: selectedPatient.current_medications ?? [],
       },
       primary_diagnosis: diagnosis,
       diagnosis_code: conditionCode || null,

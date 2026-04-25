@@ -241,7 +241,7 @@ function ReferralList({
           {rows.map((r) => {
             const counterparty = side === "sent" ? r.specialist : r.referring_doctor;
             return (
-              <tr key={r.id} className="hover:bg-muted/30 cursor-pointer" onClick={() => {}}>
+              <tr key={r.id} className="hover:bg-muted/30 cursor-pointer" onClick={() => router.navigate({ to: "/referrals/$referralId", params: { referralId: r.id } })}>
                 <td className="px-4 py-3 font-mono text-xs">{r.referral_number}</td>
                 <td className="px-4 py-3">
                   <div className="font-medium">{r.patient_snapshot?.name ?? "—"}</div>
