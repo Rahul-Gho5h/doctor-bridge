@@ -212,6 +212,7 @@ export function useHospitalDoctorLinks(hospitalClinicId: string) {
       return (data ?? []) as HospitalDoctorLink[];
     },
     enabled: Boolean(hospitalClinicId),
+    refetchInterval: 30_000, // auto-refresh every 30 s without a manual page reload
   });
 }
 

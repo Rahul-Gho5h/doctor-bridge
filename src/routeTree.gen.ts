@@ -43,6 +43,7 @@ import { Route as PatientsPatientIdRouteImport } from './routes/patients.$patien
 import { Route as OnboardingPendingRouteImport } from './routes/onboarding_.pending'
 import { Route as HospitalDoctorsRouteImport } from './routes/hospital.doctors'
 import { Route as DoctorsDoctorIdRouteImport } from './routes/doctors.$doctorId'
+import { Route as AdminDoctorsRouteImport } from './routes/admin.doctors'
 import { Route as AdminDashboardRouteImport } from './routes/admin.dashboard'
 
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
@@ -215,6 +216,11 @@ const DoctorsDoctorIdRoute = DoctorsDoctorIdRouteImport.update({
   path: '/$doctorId',
   getParentRoute: () => DoctorsRoute,
 } as any)
+const AdminDoctorsRoute = AdminDoctorsRouteImport.update({
+  id: '/admin/doctors',
+  path: '/admin/doctors',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminDashboardRoute = AdminDashboardRouteImport.update({
   id: '/admin/dashboard',
   path: '/admin/dashboard',
@@ -248,6 +254,7 @@ export interface FileRoutesByFullPath {
   '/staff': typeof StaffRoute
   '/verify-email': typeof VerifyEmailRoute
   '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/doctors': typeof AdminDoctorsRoute
   '/doctors/$doctorId': typeof DoctorsDoctorIdRoute
   '/hospital/doctors': typeof HospitalDoctorsRoute
   '/onboarding/pending': typeof OnboardingPendingRoute
@@ -282,6 +289,7 @@ export interface FileRoutesByTo {
   '/staff': typeof StaffRoute
   '/verify-email': typeof VerifyEmailRoute
   '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/doctors': typeof AdminDoctorsRoute
   '/doctors/$doctorId': typeof DoctorsDoctorIdRoute
   '/hospital/doctors': typeof HospitalDoctorsRoute
   '/onboarding/pending': typeof OnboardingPendingRoute
@@ -320,6 +328,7 @@ export interface FileRoutesById {
   '/staff': typeof StaffRoute
   '/verify-email': typeof VerifyEmailRoute
   '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/doctors': typeof AdminDoctorsRoute
   '/doctors/$doctorId': typeof DoctorsDoctorIdRoute
   '/hospital/doctors': typeof HospitalDoctorsRoute
   '/onboarding_/pending': typeof OnboardingPendingRoute
@@ -359,6 +368,7 @@ export interface FileRouteTypes {
     | '/staff'
     | '/verify-email'
     | '/admin/dashboard'
+    | '/admin/doctors'
     | '/doctors/$doctorId'
     | '/hospital/doctors'
     | '/onboarding/pending'
@@ -393,6 +403,7 @@ export interface FileRouteTypes {
     | '/staff'
     | '/verify-email'
     | '/admin/dashboard'
+    | '/admin/doctors'
     | '/doctors/$doctorId'
     | '/hospital/doctors'
     | '/onboarding/pending'
@@ -430,6 +441,7 @@ export interface FileRouteTypes {
     | '/staff'
     | '/verify-email'
     | '/admin/dashboard'
+    | '/admin/doctors'
     | '/doctors/$doctorId'
     | '/hospital/doctors'
     | '/onboarding_/pending'
@@ -468,6 +480,7 @@ export interface RootRouteChildren {
   StaffRoute: typeof StaffRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
   AdminDashboardRoute: typeof AdminDashboardRoute
+  AdminDoctorsRoute: typeof AdminDoctorsRoute
   HospitalDoctorsRoute: typeof HospitalDoctorsRoute
   OnboardingPendingRoute: typeof OnboardingPendingRoute
 }
@@ -712,6 +725,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DoctorsDoctorIdRouteImport
       parentRoute: typeof DoctorsRoute
     }
+    '/admin/doctors': {
+      id: '/admin/doctors'
+      path: '/admin/doctors'
+      fullPath: '/admin/doctors'
+      preLoaderRoute: typeof AdminDoctorsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/dashboard': {
       id: '/admin/dashboard'
       path: '/admin/dashboard'
@@ -792,6 +812,7 @@ const rootRouteChildren: RootRouteChildren = {
   StaffRoute: StaffRoute,
   VerifyEmailRoute: VerifyEmailRoute,
   AdminDashboardRoute: AdminDashboardRoute,
+  AdminDoctorsRoute: AdminDoctorsRoute,
   HospitalDoctorsRoute: HospitalDoctorsRoute,
   OnboardingPendingRoute: OnboardingPendingRoute,
 }

@@ -22,6 +22,7 @@ interface NavItem {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   roles?: AppRole[];
+  hideForRoles?: AppRole[];
   accountTypes?: AccountType[];
   hideForAccountTypes?: AccountType[];
 }
@@ -29,35 +30,47 @@ interface NavItem {
 interface NavSection { title: string; items: NavItem[] }
 
 const SECTIONS: NavSection[] = [
+  // ── Doctor / Hospital admin sections ────────────────────────────────────────
   { title: "Overview", items: [
-    { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    // Regular dashboard — hidden from clinic_admin (they get /admin/dashboard below)
+    { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, hideForRoles: ["clinic_admin"] },
   ]},
   { title: "Referral Network", items: [
-    { to: "/doctors", label: "Find Specialists", icon: Search, accountTypes: ["doctor", "hospital_admin"] },
-    { to: "/referrals", label: "Referrals", icon: Send, accountTypes: ["doctor", "hospital_admin"] },
-    { to: "/discussions", label: "Case Discussions", icon: MessageSquareMore, accountTypes: ["doctor"] },
-    { to: "/messages", label: "Messages", icon: MessageSquare, accountTypes: ["doctor", "hospital_admin"] },
+    { to: "/doctors",     label: "Find Specialists",  icon: Search,          accountTypes: ["doctor", "hospital_admin"] },
+    { to: "/referrals",   label: "Referrals",         icon: Send,            accountTypes: ["doctor", "hospital_admin"] },
+    { to: "/discussions", label: "Case Discussions",  icon: MessageSquareMore, accountTypes: ["doctor"] },
+    { to: "/messages",    label: "Messages",          icon: MessageSquare,   accountTypes: ["doctor", "hospital_admin"] },
   ]},
   { title: "Clinical", items: [
-    { to: "/patients", label: "Patients", icon: Users, hideForAccountTypes: ["hospital_admin"] },
-    { to: "/emr", label: "EMR", icon: FileText, hideForAccountTypes: ["hospital_admin"] },
+    { to: "/patients", label: "Patients", icon: Users,     hideForAccountTypes: ["hospital_admin"], hideForRoles: ["clinic_admin"] },
+    { to: "/emr",      label: "EMR",      icon: FileText,  hideForAccountTypes: ["hospital_admin"], hideForRoles: ["clinic_admin"] },
   ]},
   { title: "My Practice", items: [
-    { to: "/profile", label: "My Profile", icon: UserCircle, accountTypes: ["doctor"] },
-    { to: "/availability", label: "Availability", icon: Calendar, accountTypes: ["doctor"] },
-    { to: "/cme", label: "CME / CPD", icon: BarChart3, accountTypes: ["doctor"] },
-    { to: "/analytics", label: "Analytics", icon: BarChart3 },
-    { to: "/settings", label: "Settings", icon: Settings, hideForAccountTypes: ["hospital_admin"] },
+    { to: "/profile",      label: "My Profile",  icon: UserCircle, accountTypes: ["doctor"] },
+    { to: "/availability", label: "Availability", icon: Calendar,  accountTypes: ["doctor"] },
+    { to: "/cme",          label: "CME / CPD",   icon: BarChart3, accountTypes: ["doctor"] },
+    { to: "/analytics",    label: "Analytics",   icon: BarChart3, hideForRoles: ["clinic_admin"] },
+    { to: "/settings",     label: "Settings",    icon: Settings,  hideForAccountTypes: ["hospital_admin"], hideForRoles: ["clinic_admin"] },
   ]},
   { title: "Hospital", items: [
-    { to: "/hospital/doctors", label: "My Doctors", icon: Users, accountTypes: ["hospital_admin"] },
-    { to: "/affiliations", label: "Affiliation Requests", icon: Inbox, accountTypes: ["hospital_admin"] },
-    { to: "/settings", label: "Hospital Profile", icon: Building2, accountTypes: ["hospital_admin"] },
-    { to: "/analytics", label: "Analytics", icon: BarChart3, accountTypes: ["hospital_admin"] },
-    { to: "/appointments", label: "Appointments", icon: Calendar, accountTypes: ["hospital_admin"] },
-    { to: "/billing", label: "Billing", icon: Receipt, accountTypes: ["hospital_admin"] },
-    { to: "/staff", label: "Staff", icon: UserCog, accountTypes: ["hospital_admin"] },
-    { to: "/inventory", label: "Inventory", icon: Package, accountTypes: ["hospital_admin"] },
+    { to: "/hospital/doctors", label: "My Doctors",           icon: Users,     accountTypes: ["hospital_admin"] },
+    { to: "/affiliations",     label: "Affiliation Requests", icon: Inbox,     accountTypes: ["hospital_admin"] },
+    { to: "/settings",         label: "Hospital Profile",     icon: Building2, accountTypes: ["hospital_admin"] },
+    { to: "/analytics",        label: "Analytics",            icon: BarChart3, accountTypes: ["hospital_admin"] },
+    { to: "/appointments",     label: "Appointments",         icon: Calendar,  accountTypes: ["hospital_admin"] },
+    { to: "/billing",          label: "Billing",              icon: Receipt,   accountTypes: ["hospital_admin"] },
+    { to: "/staff",            label: "Staff",                icon: UserCog,   accountTypes: ["hospital_admin"] },
+    { to: "/inventory",        label: "Inventory",            icon: Package,   accountTypes: ["hospital_admin"] },
+  ]},
+  // ── Clinic Admin section — only visible to clinic_admin role ────────────────
+  { title: "Overview", items: [
+    { to: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["clinic_admin"] },
+    { to: "/admin/doctors",   label: "Doctors",   icon: Users,           roles: ["clinic_admin"] },
+    { to: "/patients",        label: "Patients",  icon: Users,           roles: ["clinic_admin"] },
+  ]},
+  { title: "Reports", items: [
+    { to: "/analytics", label: "Analytics", icon: BarChart3, roles: ["clinic_admin"] },
+    { to: "/settings",  label: "Settings",  icon: Settings,  roles: ["clinic_admin"] },
   ]},
 ];
 
@@ -68,6 +81,10 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [timedOut, setTimedOut] = useState(false);
   const [docVerified, setDocVerified] = useState<boolean | null>(null);
+
+  // Derived role/account values — declared before any useEffect that references them
+  const accountType: AccountType = profile?.account_type ?? "clinic_staff";
+  const isClinicAdmin = roles.includes("clinic_admin");
 
   // Safety valve: if auth hasn't resolved in 8s, stop spinning and redirect
   useEffect(() => {
@@ -82,6 +99,18 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       router.navigate({ to: "/login", search: { redirect: pathname } as never });
     }
   }, [loading, user, router, pathname]);
+
+  // Role guard: clinic_admin cannot access clinical / referral routes
+  const CLINIC_ADMIN_BLOCKED = [
+    "/referrals", "/emr", "/cme", "/appointments",
+    "/availability", "/discussions", "/messages", "/doctors",
+    "/dashboard",
+  ];
+  useEffect(() => {
+    if (loading || !isClinicAdmin) return;
+    const blocked = CLINIC_ADMIN_BLOCKED.some((prefix) => pathname.startsWith(prefix));
+    if (blocked) router.navigate({ to: "/admin/dashboard" });
+  }, [loading, isClinicAdmin, pathname, router]);
 
   // Check if a doctor has completed identity verification
   useEffect(() => {
@@ -103,11 +132,10 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   // Check for due follow-up reminders
   useReminders(user?.id);
 
-  const accountType: AccountType = profile?.account_type ?? "clinic_staff";
-
   const visible = (item: NavItem) => {
-    if (item.roles && !item.roles.some((r) => roles.includes(r))) return false;
-    if (item.accountTypes && !item.accountTypes.includes(accountType)) return false;
+    if (item.roles        && !item.roles.some((r) => roles.includes(r)))          return false;
+    if (item.hideForRoles &&  item.hideForRoles.some((r) => roles.includes(r)))   return false;
+    if (item.accountTypes && !item.accountTypes.includes(accountType))            return false;
     if (item.hideForAccountTypes && item.hideForAccountTypes.includes(accountType)) return false;
     return true;
   };
@@ -148,7 +176,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const SidebarBody = (
     <>
       <div className="flex h-16 items-center gap-2 border-b border-sidebar-border px-4 text-sidebar-foreground">
-        <BrandLogo size="sm" to="/dashboard" />
+        <BrandLogo size="sm" to={isClinicAdmin ? "/admin/dashboard" : "/dashboard"} />
       </div>
       <nav className="flex-1 overflow-y-auto px-3 py-4">
         {SECTIONS.map((section) => {
@@ -236,11 +264,13 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           </Sheet>
           <div className="flex-1 py-3">
             <div className="text-sm font-semibold text-primary">
-              {accountType === "doctor"
-                ? "Independent practice"
-                : accountType === "hospital_admin"
-                  ? "Hospital admin workspace"
-                  : "Clinic workspace"}
+              {isClinicAdmin
+                ? "Clinic admin workspace"
+                : accountType === "doctor"
+                  ? "Independent practice"
+                  : accountType === "hospital_admin"
+                    ? "Hospital admin workspace"
+                    : "Clinic workspace"}
             </div>
             <div className="text-xs text-muted-foreground">
               India defaults: INR, Asia/Kolkata, verified doctors only
