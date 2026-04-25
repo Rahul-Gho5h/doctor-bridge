@@ -1,6 +1,6 @@
 ﻿import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState, useCallback } from "react";
-import { Search, UserPlus, Users, ShieldCheck, Lock, ChevronDown } from "lucide-react";
+import { Search, UserPlus, Users, ChevronDown } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/common/PageHeader";
 import { EmptyState } from "@/components/common/EmptyState";
@@ -52,12 +52,6 @@ function PatientsPage() {
     const t = setTimeout(() => search(q), 300);
     return () => clearTimeout(t);
   }, [q, search]);
-
-  const requestAccess = async (patientId: string) => {
-    const { error } = await supabase.rpc("request_patient_access", { _patient_id: patientId });
-    if (error) toast.error(error.message);
-    else { toast.success("Access granted"); search(q); }
-  };
 
   return (
     <ErrorBoundary>
@@ -131,30 +125,17 @@ function PatientsPage() {
                   <tr key={p.id} className="hover:bg-muted/30">
                     <td className="px-4 py-3 font-mono text-xs">{p.display_id}</td>
                     <td className="px-4 py-3 font-medium">
-                      <span className="inline-flex items-center gap-2">
-                        {p.has_access
-                          ? <ShieldCheck className="h-3.5 w-3.5 text-success" />
-                          : <Lock className="h-3.5 w-3.5 text-muted-foreground" />}
-                        {p.first_name} {p.last_name}
-                      </span>
+                      {p.first_name} {p.last_name}
                     </td>
                     <td className="px-4 py-3">{age(p.date_of_birth)}y · {p.gender}</td>
                     <td className="px-4 py-3 font-mono text-xs">{p.phone}</td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {p.has_access
-                        ? [p.city, p.state, p.pincode].filter(Boolean).join(", ") || "—"
-                        : <span className="italic">Restricted</span>}
+                      {[p.city, p.state, p.pincode].filter(Boolean).join(", ") || "—"}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      {p.has_access ? (
-                        <Button asChild size="sm" variant="outline">
-                          <Link to="/patients/$patientId" params={{ patientId: p.id }}>Open</Link>
-                        </Button>
-                      ) : (
-                        <Button size="sm" variant="outline" onClick={() => requestAccess(p.id)}>
-                          Request access
-                        </Button>
-                      )}
+                      <Button asChild size="sm" variant="outline">
+                        <Link to="/patients/$patientId" params={{ patientId: p.id }}>Open</Link>
+                      </Button>
                     </td>
                   </tr>
                 ))}
