@@ -431,17 +431,18 @@ export function PlatformAnalytics() {
         .sort((a, b) => b.count - a.count);
 
       // ── Funnel ───────────────────────────────────────────────────────────
-      const FUNNEL_ORDER = ["SENT", "PENDING", "VIEWED", "ACKNOWLEDGED", "ACCEPTED", "IN_PROGRESS", "COMPLETED"];
+      // Status values must match the referral_status DB enum exactly
+      const FUNNEL_ORDER = ["SENT", "VIEWED", "ACKNOWLEDGED", "ACCEPTED", "APPOINTMENT_BOOKED", "COMPLETED"];
       const funnelStages: FunnelStage[] = FUNNEL_ORDER
         .filter((s) => statusMap.has(s))
         .map((s, i, arr) => {
           const count = statusMap.get(s) ?? 0;
           const prevCount = i === 0 ? count : (statusMap.get(arr[i - 1]) ?? 0);
           const pct = prevCount > 0 ? Math.round((count / prevCount) * 100) : 100;
-          return { label: s, count, pct };
+          return { label: s.replace("_", " "), count, pct };
         });
-      // Add REJECTED/CANCELLED at end if they exist
-      ["REJECTED", "CANCELLED", "DECLINED"].forEach((s) => {
+      // Declined / cancelled at the end (drop-off)
+      ["DECLINED", "CANCELLED", "EXPIRED"].forEach((s) => {
         if (statusMap.has(s)) funnelStages.push({ label: s, count: statusMap.get(s)!, pct: 0 });
       });
 

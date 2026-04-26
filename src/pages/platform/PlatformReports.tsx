@@ -83,7 +83,8 @@ function defaultFilters(): ReportFilters {
   return { fromDate: isoDate(from), toDate: isoDate(to), institutionId: "all", statuses: ALL_STATUSES };
 }
 
-const ALL_STATUSES = ["SENT", "PENDING", "VIEWED", "ACKNOWLEDGED", "ACCEPTED", "IN_PROGRESS", "COMPLETED", "REJECTED", "CANCELLED"];
+// Must match the referral_status enum exactly as defined in the database
+const ALL_STATUSES = ["DRAFT", "SENT", "VIEWED", "ACKNOWLEDGED", "ACCEPTED", "APPOINTMENT_BOOKED", "COMPLETED", "DECLINED", "CANCELLED", "EXPIRED"];
 
 function fmt(iso: string | null) {
   if (!iso) return "—";
@@ -605,7 +606,7 @@ export function PlatformReports() {
           <div className="space-y-1">
             <Label className="text-xs">Referral statuses</Label>
             <div className="flex flex-wrap gap-1">
-              {["SENT", "ACCEPTED", "COMPLETED", "REJECTED"].map((s) => (
+              {["SENT", "ACCEPTED", "COMPLETED", "DECLINED", "CANCELLED"].map((s) => (
                 <button
                   key={s}
                   onClick={() => setFilters((f) => ({
