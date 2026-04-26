@@ -436,6 +436,7 @@ function PersonalTab({ userId, onSaved }: {
   const [email, setEmail]                 = useState("");
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [saving, setSaving]               = useState(false);
+  const [isDirty, setIsDirty]             = useState(false);
 
   // ── Fix 1: fetch all fields directly from the DB ─────────────────────────
   useEffect(() => {
@@ -473,13 +474,15 @@ function PersonalTab({ userId, onSaved }: {
     }).eq("id", userId);
     setSaving(false);
     if (error) toast.error(error.message);
-    else { toast.success("Personal info saved"); onSaved(); }
+    else { toast.success("Personal info saved"); setIsDirty(false); onSaved(); }
   };
 
   const f = (k: keyof PersonalForm) => ({
     value: form[k] as string,
-    onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-      setForm((p) => ({ ...p, [k]: e.target.value })),
+    onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      setForm((p) => ({ ...p, [k]: e.target.value }));
+      setIsDirty(true);
+    },
   });
 
   if (loadingProfile) {
@@ -510,7 +513,7 @@ function PersonalTab({ userId, onSaved }: {
         <Textarea {...f("bio")} rows={4} placeholder="Brief professional bio visible on your public profile…" />
       </Field>
       <div className="mt-4 flex justify-end">
-        <Button onClick={save} disabled={saving}>
+        <Button onClick={save} disabled={saving || !isDirty}>
           <Save className="mr-1.5 h-4 w-4" />{saving ? "Saving…" : "Save changes"}
         </Button>
       </div>
@@ -530,7 +533,8 @@ function ClinicalTab({ doc, onSaved }: { doc: DocProfile; onSaved: () => void })
     languages_spoken:  doc.languages_spoken,
     insurance_panels:  doc.insurance_panels,
   });
-  const [saving, setSaving] = useState(false);
+  const [saving, setSaving]   = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
 
   const save = async () => {
     setSaving(true);
@@ -545,21 +549,23 @@ function ClinicalTab({ doc, onSaved }: { doc: DocProfile; onSaved: () => void })
     }).eq("id", doc.id);
     setSaving(false);
     if (error) toast.error(error.message);
-    else { toast.success("Clinical profile saved"); onSaved(); }
+    else { toast.success("Clinical profile saved"); setIsDirty(false); onSaved(); }
   };
 
-  const setArr = (key: keyof ClinicalForm) => (val: string[]) =>
+  const setArr = (key: keyof ClinicalForm) => (val: string[]) => {
     setForm((p) => ({ ...p, [key]: val }));
+    setIsDirty(true);
+  };
 
   return (
     <div className="space-y-6">
       <Card title="Titles & academia" icon={Stethoscope}>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Academic title (e.g. Associate Professor)">
-            <Input value={form.academic_title} onChange={(e) => setForm((p) => ({ ...p, academic_title: e.target.value }))} placeholder="Optional" />
+            <Input value={form.academic_title} onChange={(e) => { setForm((p) => ({ ...p, academic_title: e.target.value })); setIsDirty(true); }} placeholder="Optional" />
           </Field>
           <Field label="Teaching hospital">
-            <Input value={form.teaching_hospital} onChange={(e) => setForm((p) => ({ ...p, teaching_hospital: e.target.value }))} placeholder="Optional" />
+            <Input value={form.teaching_hospital} onChange={(e) => { setForm((p) => ({ ...p, teaching_hospital: e.target.value })); setIsDirty(true); }} placeholder="Optional" />
           </Field>
         </div>
       </Card>
@@ -600,7 +606,7 @@ function ClinicalTab({ doc, onSaved }: { doc: DocProfile; onSaved: () => void })
       </Card>
 
       <div className="flex justify-end">
-        <Button onClick={save} disabled={saving}>
+        <Button onClick={save} disabled={saving || !isDirty}>
           <Save className="mr-1.5 h-4 w-4" />{saving ? "Saving…" : "Save clinical profile"}
         </Button>
       </div>
@@ -615,7 +621,8 @@ function AvailabilityTab({ doc, onSaved }: { doc: DocProfile; onSaved: () => voi
     accepting_referrals: doc.accepting_referrals,
     weekly_referral_cap: doc.weekly_referral_cap,
   });
-  const [saving, setSaving] = useState(false);
+  const [saving, setSaving]   = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
 
   const save = async () => {
     if (form.weekly_referral_cap < 1) { toast.error("Weekly cap must be at least 1"); return; }
@@ -626,7 +633,7 @@ function AvailabilityTab({ doc, onSaved }: { doc: DocProfile; onSaved: () => voi
     }).eq("id", doc.id);
     setSaving(false);
     if (error) toast.error(error.message);
-    else { toast.success("Availability saved"); onSaved(); }
+    else { toast.success("Availability saved"); setIsDirty(false); onSaved(); }
   };
 
   return (
@@ -641,7 +648,7 @@ function AvailabilityTab({ doc, onSaved }: { doc: DocProfile; onSaved: () => voi
             </div>
           </div>
           <button
-            onClick={() => setForm((p) => ({ ...p, accepting_referrals: !p.accepting_referrals }))}
+            onClick={() => { setForm((p) => ({ ...p, accepting_referrals: !p.accepting_referrals })); setIsDirty(true); }}
             className="ml-4 shrink-0"
           >
             {form.accepting_referrals
@@ -659,7 +666,7 @@ function AvailabilityTab({ doc, onSaved }: { doc: DocProfile; onSaved: () => voi
               min={1}
               max={200}
               value={form.weekly_referral_cap}
-              onChange={(e) => setForm((p) => ({ ...p, weekly_referral_cap: Number(e.target.value) }))}
+              onChange={(e) => { setForm((p) => ({ ...p, weekly_referral_cap: Number(e.target.value) })); setIsDirty(true); }}
               className="w-28"
             />
             <span className="text-sm text-muted-foreground">referrals per week</span>
@@ -678,7 +685,7 @@ function AvailabilityTab({ doc, onSaved }: { doc: DocProfile; onSaved: () => voi
         </div>
 
         <div className="flex justify-end">
-          <Button onClick={save} disabled={saving}>
+          <Button onClick={save} disabled={saving || !isDirty}>
             <Save className="mr-1.5 h-4 w-4" />{saving ? "Saving…" : "Save availability"}
           </Button>
         </div>
