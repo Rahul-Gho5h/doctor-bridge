@@ -29,6 +29,7 @@ import { toast } from "sonner";
 import { AttachmentList } from "@/components/patients/AttachmentList";
 import { FileDropzone } from "@/components/patients/FileDropzone";
 import { EditPatientDialog } from "@/components/patients/EditPatientDialog";
+import { StatusBadge } from "@/components/common/StatusBadge";
 import type { StoredAttachment } from "@/lib/storage";
 import { deletePatientFile } from "@/lib/storage";
 
@@ -201,6 +202,9 @@ function PatientDetailPage() {
                     <ShieldCheck className="mr-1 h-3.5 w-3.5" />Consent log
                   </TabsTrigger>
                   <TabsTrigger value="audit">Edit history</TabsTrigger>
+                  <TabsTrigger value="referrals">
+                    <Send className="mr-1 h-3.5 w-3.5" />Referrals
+                  </TabsTrigger>
                 </TabsList>
                 <EncounterDialog patientId={patient.id} onSaved={reload} />
               </div>
@@ -271,6 +275,10 @@ function PatientDetailPage() {
 
               <TabsContent value="audit" className="mt-0">
                 <AuditLogView patientId={patient.id} />
+              </TabsContent>
+
+              <TabsContent value="referrals" className="mt-0">
+                <PatientReferralsView patientMrn={patient.display_id} patientId={patient.id} />
               </TabsContent>
             </Tabs>
           </div>
@@ -391,6 +399,31 @@ function ChipsCard({
 function EncounterDataView({ type, data }: { type: EncounterType; data: Record<string, unknown> }) {
   if (!data || Object.keys(data).length === 0) return null;
 
+  // VISIT: composite BP + labelled units
+  if (type === "VISIT") {
+    const entries: { label: string; value: string }[] = [];
+    if (data.chief_complaint) entries.push({ label: "Chief complaint", value: data.chief_complaint as string });
+    const bpSys = data.bp_systolic as string | undefined;
+    const bpDia = data.bp_diastolic as string | undefined;
+    if (bpSys && bpDia)  entries.push({ label: "Blood pressure", value: `${bpSys}/${bpDia} mmHg` });
+    else if (bpSys)      entries.push({ label: "BP systolic",    value: `${bpSys} mmHg` });
+    if (data.heart_rate)  entries.push({ label: "Heart rate",    value: `${data.heart_rate} bpm` });
+    if (data.temperature) entries.push({ label: "Temperature",   value: `${data.temperature} °C` });
+    if (data.weight)      entries.push({ label: "Weight",        value: `${data.weight} kg` });
+    if (data.spo2)        entries.push({ label: "SpO₂",          value: `${data.spo2}%` });
+    if (entries.length === 0) return null;
+    return (
+      <dl className="mt-3 grid grid-cols-2 gap-2 rounded-md bg-muted/40 p-3 text-xs sm:grid-cols-3">
+        {entries.map((f) => (
+          <div key={f.label}>
+            <dt className="text-muted-foreground">{f.label}</dt>
+            <dd className="font-medium">{f.value}</dd>
+          </div>
+        ))}
+      </dl>
+    );
+  }
+
   const fields: { label: string; key: string }[] =
     type === "PRESCRIPTION" ? [
       { label: "Medication", key: "medication" }, { label: "Dosage", key: "dosage" },
@@ -418,6 +451,120 @@ function EncounterDataView({ type, data }: { type: EncounterType; data: Record<s
         </div>
       ))}
     </dl>
+  );
+}
+
+// ── Patient referrals ─────────────────────────────────────────────────────────
+
+interface PatientReferralRow {
+  id: string;
+  referral_number: string;
+  primary_diagnosis: string;
+  status: string;
+  created_at: string;
+  specialist_id: string;
+  specialistName: string | null;
+}
+
+function PatientReferralsView({ patientMrn, patientId }: { patientMrn: string; patientId: string }) {
+  const [refs, setRefs]     = useState<PatientReferralRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    (async () => {
+      // Query referrals where patient_snapshot.mrn matches this patient's display_id
+      const { data, error } = await supabase
+        .from("referrals")
+        .select("id,referral_number,primary_diagnosis,status,created_at,specialist_id")
+        .eq("patient_snapshot->>mrn", patientMrn)
+        .order("created_at", { ascending: false })
+        .limit(100);
+
+      if (error || !data || data.length === 0) {
+        setRefs([]);
+        setLoading(false);
+        return;
+      }
+
+      // Enrich with specialist names via doctor_profiles → profiles
+      const specIds = Array.from(new Set(data.map((r: any) => r.specialist_id as string)));
+      const { data: docs } = specIds.length
+        ? await supabase.from("doctor_profiles").select("id,user_id").in("id", specIds)
+        : { data: [] as any[] };
+      const userIds = Array.from(new Set((docs ?? []).map((d: any) => d.user_id as string)));
+      const { data: profs } = userIds.length
+        ? await supabase.from("profiles").select("id,first_name,last_name").in("id", userIds)
+        : { data: [] as any[] };
+
+      const docMap  = new Map((docs  ?? []).map((d: any) => [d.id as string, d.user_id as string]));
+      const profMap = new Map((profs ?? []).map((p: any) => [p.id as string, `Dr. ${p.first_name} ${p.last_name}`]));
+
+      setRefs(data.map((r: any) => ({
+        ...r,
+        specialistName: profMap.get(docMap.get(r.specialist_id) ?? "") ?? null,
+      })));
+      setLoading(false);
+    })();
+  }, [patientMrn]);
+
+  if (loading) {
+    return (
+      <div className="overflow-hidden rounded-xl border bg-card">
+        <div className="divide-y">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-4 px-4 py-3">
+              <Skeleton className="h-3 w-24" />
+              <Skeleton className="h-3 w-40" />
+              <Skeleton className="h-5 w-20 rounded-md" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (refs.length === 0) {
+    return (
+      <EmptyState
+        icon={Send}
+        title="No referrals found"
+        description="No referrals have been sent for this patient yet."
+      />
+    );
+  }
+
+  return (
+    <div className="overflow-hidden rounded-xl border bg-card shadow-card">
+      <table className="w-full text-sm">
+        <thead className="bg-muted/40 text-xs uppercase tracking-wider text-muted-foreground">
+          <tr>
+            <th className="px-4 py-3 text-left">Ref #</th>
+            <th className="px-4 py-3 text-left">Diagnosis</th>
+            <th className="px-4 py-3 text-left">Specialist</th>
+            <th className="px-4 py-3 text-left">Status</th>
+            <th className="px-4 py-3 text-left">Date</th>
+            <th className="px-4 py-3 text-right"></th>
+          </tr>
+        </thead>
+        <tbody className="divide-y">
+          {refs.map((r) => (
+            <tr key={r.id} className="hover:bg-muted/30">
+              <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{r.referral_number}</td>
+              <td className="px-4 py-3 font-medium">{r.primary_diagnosis}</td>
+              <td className="px-4 py-3 text-muted-foreground">{r.specialistName ?? "—"}</td>
+              <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
+              <td className="px-4 py-3 text-xs text-muted-foreground">{formatDate(r.created_at)}</td>
+              <td className="px-4 py-3 text-right">
+                <Button asChild size="sm" variant="outline">
+                  <Link to="/referrals/$referralId" params={{ referralId: r.id }}>Open</Link>
+                </Button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
@@ -574,57 +721,61 @@ function EncounterDialog({
       <DialogTrigger asChild>
         {children ?? <Button><Plus className="mr-1.5 h-4 w-4" />Add entry</Button>}
       </DialogTrigger>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
+      <DialogContent className="flex max-h-[92vh] max-w-2xl flex-col">
+        <DialogHeader className="shrink-0">
           <DialogTitle>{editing ? "Edit timeline entry" : "New timeline entry"}</DialogTitle>
           <DialogDescription>
             Logged with your name, visible to other treating doctors. Every change is audited.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div>
-            <Label className="mb-1.5 block text-xs">Type</Label>
-            <Select value={type} onValueChange={(v) => setType(v as EncounterType)} disabled={!!editing}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {(Object.keys(TYPE_META) as EncounterType[]).map((t) => (
-                  <SelectItem key={t} value={t}>{TYPE_META[t].label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label className="mb-1.5 block text-xs">Date &amp; time</Label>
-            <Input type="datetime-local" value={occurredAt} onChange={(e) => setOccurredAt(e.target.value)} />
-          </div>
-          <div className="sm:col-span-2">
-            <Label className="mb-1.5 block text-xs">Title *</Label>
-            <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Follow-up consultation" />
-          </div>
-          <div className="sm:col-span-2">
-            <Label className="mb-1.5 block text-xs">Hospital / Clinic name</Label>
-            <Input value={hospitalName} onChange={(e) => setHospitalName(e.target.value)} placeholder="Where this took place" />
-          </div>
-          <div className="sm:col-span-2">
-            <Label className="mb-1.5 block text-xs">Details / Notes</Label>
-            <Textarea rows={3} value={details} onChange={(e) => setDetails(e.target.value)} placeholder="Clinical observations, instructions, precautions…" />
-          </div>
 
-          <TypedFields type={type} data={data} setData={setData} />
+        <div className="flex-1 overflow-y-auto pr-1">
+          <div className="grid gap-3 sm:grid-cols-2 pb-2">
+            <div>
+              <Label className="mb-1.5 block text-xs">Type</Label>
+              <Select value={type} onValueChange={(v) => setType(v as EncounterType)} disabled={!!editing}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {(Object.keys(TYPE_META) as EncounterType[]).map((t) => (
+                    <SelectItem key={t} value={t}>{TYPE_META[t].label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="mb-1.5 block text-xs">Date &amp; time</Label>
+              <Input type="datetime-local" value={occurredAt} onChange={(e) => setOccurredAt(e.target.value)} />
+            </div>
+            <div className="sm:col-span-2">
+              <Label className="mb-1.5 block text-xs">Title *</Label>
+              <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Follow-up consultation" />
+            </div>
+            <div className="sm:col-span-2">
+              <Label className="mb-1.5 block text-xs">Hospital / Clinic name</Label>
+              <Input value={hospitalName} onChange={(e) => setHospitalName(e.target.value)} placeholder="Where this took place" />
+            </div>
+            <div className="sm:col-span-2">
+              <Label className="mb-1.5 block text-xs">Details / Notes</Label>
+              <Textarea rows={3} value={details} onChange={(e) => setDetails(e.target.value)} placeholder="Clinical observations, instructions, precautions…" />
+            </div>
 
-          <div className="sm:col-span-2">
-            <Label className="mb-1.5 block text-xs">Attachments</Label>
-            {user && (
-              <FileDropzone
-                patientId={patientId}
-                uploadedBy={user.id}
-                value={attachments}
-                onChange={setAttachments}
-              />
-            )}
+            <TypedFields type={type} data={data} setData={setData} />
+
+            <div className="sm:col-span-2">
+              <Label className="mb-1.5 block text-xs">Attachments</Label>
+              {user && (
+                <FileDropzone
+                  patientId={patientId}
+                  uploadedBy={user.id}
+                  value={attachments}
+                  onChange={setAttachments}
+                />
+              )}
+            </div>
           </div>
         </div>
-        <DialogFooter>
+
+        <DialogFooter className="shrink-0 border-t pt-4">
           <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
           <Button onClick={submit} disabled={busy}>
             {busy ? "Saving…" : editing ? "Save changes" : "Add to timeline"}
@@ -641,6 +792,36 @@ function TypedFields({
   type: EncounterType; data: Record<string, string>; setData: (d: Record<string, string>) => void;
 }) {
   const set = (k: string, v: string) => setData({ ...data, [k]: v });
+
+  if (type === "VISIT") return (
+    <>
+      <div className="sm:col-span-2">
+        <Label className="mb-1.5 block text-xs">Chief complaint</Label>
+        <Input
+          value={data.chief_complaint ?? ""}
+          onChange={(e) => set("chief_complaint", e.target.value)}
+          placeholder="e.g. Chest pain, shortness of breath"
+        />
+      </div>
+      <div className="sm:col-span-2">
+        <Label className="mb-1.5 block text-xs font-semibold text-muted-foreground">Vitals</Label>
+      </div>
+      <div className="flex gap-2">
+        <div className="flex-1">
+          <Label className="mb-1.5 block text-xs">BP systolic (mmHg)</Label>
+          <Input type="number" value={data.bp_systolic ?? ""} onChange={(e) => set("bp_systolic", e.target.value)} placeholder="120" />
+        </div>
+        <div className="flex-1">
+          <Label className="mb-1.5 block text-xs">BP diastolic (mmHg)</Label>
+          <Input type="number" value={data.bp_diastolic ?? ""} onChange={(e) => set("bp_diastolic", e.target.value)} placeholder="80" />
+        </div>
+      </div>
+      <Field label="Heart rate (bpm)"  v={data.heart_rate ?? ""}  on={(v) => set("heart_rate",  v)} placeholder="72" />
+      <Field label="Temperature (°C)"  v={data.temperature ?? ""} on={(v) => set("temperature", v)} placeholder="37.0" />
+      <Field label="Weight (kg)"       v={data.weight ?? ""}      on={(v) => set("weight",      v)} placeholder="70" />
+      <Field label="SpO₂ (%)"          v={data.spo2 ?? ""}        on={(v) => set("spo2",        v)} placeholder="98" />
+    </>
+  );
 
   if (type === "PRESCRIPTION") return (
     <>

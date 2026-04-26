@@ -1,6 +1,6 @@
 ﻿import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState, useCallback } from "react";
-import { Search, UserPlus, Users, ChevronDown } from "lucide-react";
+import { useEffect, useState, useCallback, useMemo } from "react";
+import { Search, UserPlus, Users, ChevronDown, X } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/common/PageHeader";
 import { EmptyState } from "@/components/common/EmptyState";
@@ -17,6 +17,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { age, formatDate } from "@/lib/format";
 import { toast } from "sonner";
 
+const INDIAN_STATES = [
+  "Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chhattisgarh","Goa","Gujarat",
+  "Haryana","Himachal Pradesh","Jharkhand","Karnataka","Kerala","Madhya Pradesh",
+  "Maharashtra","Manipur","Meghalaya","Mizoram","Nagaland","Odisha","Punjab","Rajasthan",
+  "Sikkim","Tamil Nadu","Telangana","Tripura","Uttar Pradesh","Uttarakhand","West Bengal",
+  "Andaman and Nicobar Islands","Chandigarh","Dadra and Nagar Haveli and Daman and Diu",
+  "Delhi","Jammu and Kashmir","Ladakh","Lakshadweep","Puducherry",
+] as const;
+
 export const Route = createFileRoute("/patients/")({
   head: () => ({ meta: [{ title: "Patients — Doctor Bridge" }] }),
   component: PatientsPage,
@@ -26,6 +35,7 @@ interface SearchRow {
   id: string; display_id: string; first_name: string; last_name: string;
   phone: string; date_of_birth: string; gender: string;
   city: string | null; state: string | null; pincode: string | null;
+  blood_group: string | null;
   has_access: boolean;
 }
 
@@ -35,12 +45,36 @@ function PatientsPage() {
   const [rows, setRows] = useState<SearchRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [displayCount, setDisplayCount] = useState(PAGE_SIZE);
+  const [genderFilter, setGenderFilter]         = useState("ALL");
+  const [bloodGroupFilter, setBloodGroupFilter] = useState("ALL");
+
+  const hasFilters = genderFilter !== "ALL" || bloodGroupFilter !== "ALL";
+
+  const filteredRows = useMemo(() => rows.filter((p) => {
+    if (genderFilter     !== "ALL" && p.gender.toUpperCase()    !== genderFilter)    return false;
+    if (bloodGroupFilter !== "ALL" && (p.blood_group ?? "") !== bloodGroupFilter) return false;
+    return true;
+  }), [rows, genderFilter, bloodGroupFilter]);
+
+  const clearFilters = () => { setGenderFilter("ALL"); setBloodGroupFilter("ALL"); };
 
   const search = useCallback(async (term: string) => {
     setLoading(true);
     const { data, error } = await supabase.rpc("search_global_patients", { _q: term });
-    if (error) { toast.error(error.message); setRows([]); }
-    else setRows((data ?? []) as SearchRow[]);
+    if (error) { toast.error(error.message); setRows([]); setLoading(false); return; }
+    const rpcRows = (data ?? []) as SearchRow[];
+    if (rpcRows.length > 0) {
+      const { data: extras } = await supabase
+        .from("global_patients")
+        .select("id,blood_group")
+        .in("id", rpcRows.map((r) => r.id));
+      const bgMap = new Map(
+        (extras ?? []).map((e) => [e.id as string, e.blood_group as string | null])
+      );
+      setRows(rpcRows.map((r) => ({ ...r, blood_group: bgMap.get(r.id) ?? null })));
+    } else {
+      setRows([]);
+    }
     setLoading(false);
   }, []);
 
@@ -52,6 +86,9 @@ function PatientsPage() {
     const t = setTimeout(() => search(q), 300);
     return () => clearTimeout(t);
   }, [q, search]);
+
+  // reset display count when filters change
+  useEffect(() => { setDisplayCount(PAGE_SIZE); }, [genderFilter, bloodGroupFilter]);
 
   return (
     <ErrorBoundary>
@@ -83,6 +120,42 @@ function PatientsPage() {
         </div>
       </div>
 
+      {/* ── Filter bar ────────────────────────────────────────────────────── */}
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <Select value={genderFilter} onValueChange={setGenderFilter}>
+          <SelectTrigger className="h-9 w-36 text-xs">
+            <SelectValue placeholder="Gender" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ALL">All genders</SelectItem>
+            <SelectItem value="MALE">Male</SelectItem>
+            <SelectItem value="FEMALE">Female</SelectItem>
+            <SelectItem value="OTHER">Other</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={bloodGroupFilter} onValueChange={setBloodGroupFilter}>
+          <SelectTrigger className="h-9 w-36 text-xs">
+            <SelectValue placeholder="Blood group" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ALL">All blood groups</SelectItem>
+            {["A+","A-","B+","B-","AB+","AB-","O+","O-"].map((bg) => (
+              <SelectItem key={bg} value={bg}>{bg}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {hasFilters && (
+          <button
+            onClick={clearFilters}
+            className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-3 w-3" />Clear filters
+          </button>
+        )}
+      </div>
+
       {loading ? (
         <TableSkeleton columns={6} rows={6} />
       ) : rows.length === 0 ? (
@@ -100,12 +173,26 @@ function PatientsPage() {
             ) : undefined
           }
         />
+      ) : filteredRows.length === 0 ? (
+        <EmptyState
+          icon={Users}
+          title="No patients match filters"
+          description="Try adjusting the gender or blood group filter, or clear all filters to see all results."
+          action={
+            <button onClick={clearFilters} className="inline-flex items-center gap-1 text-sm text-primary hover:underline">
+              <X className="h-3.5 w-3.5" />Clear filters
+            </button>
+          }
+        />
       ) : (
         <div className="space-y-3">
           <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
             <span>
-              Showing <span className="font-medium text-foreground">{Math.min(displayCount, rows.length)}</span>
-              {" "}of <span className="font-medium text-foreground">{rows.length}</span> results
+              Showing <span className="font-medium text-foreground">{Math.min(displayCount, filteredRows.length)}</span>
+              {" "}of <span className="font-medium text-foreground">{filteredRows.length}</span>
+              {hasFilters && rows.length !== filteredRows.length && (
+                <> (filtered from {rows.length})</>
+              )}
             </span>
           </div>
           <div className="overflow-hidden rounded-xl border bg-card shadow-card">
@@ -121,7 +208,7 @@ function PatientsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y">
-                {rows.slice(0, displayCount).map((p) => (
+                {filteredRows.slice(0, displayCount).map((p) => (
                   <tr key={p.id} className="hover:bg-muted/30">
                     <td className="px-4 py-3 font-mono text-xs">{p.display_id}</td>
                     <td className="px-4 py-3 font-medium">
@@ -142,7 +229,7 @@ function PatientsPage() {
               </tbody>
             </table>
 
-            {rows.length > displayCount && (
+            {filteredRows.length > displayCount && (
               <div className="border-t px-4 py-3 text-center">
                 <Button
                   variant="outline"
@@ -150,7 +237,7 @@ function PatientsPage() {
                   onClick={() => setDisplayCount((c) => c + PAGE_SIZE)}
                 >
                   <ChevronDown className="mr-1.5 h-3.5 w-3.5" />
-                  Show {Math.min(PAGE_SIZE, rows.length - displayCount)} more
+                  Show {Math.min(PAGE_SIZE, filteredRows.length - displayCount)} more
                 </Button>
               </div>
             )}
@@ -221,10 +308,32 @@ function RegisterPatientDialog({ onCreated }: { onCreated: () => void }) {
               </SelectContent>
             </Select>
           </div>
-          <Field label="Blood group" v={form.blood_group} on={(v) => setForm({ ...form, blood_group: v })} placeholder="O+, AB- …" />
+          <div>
+            <Label className="mb-1.5 block text-xs">Blood group</Label>
+            <Select value={form.blood_group} onValueChange={(v) => setForm({ ...form, blood_group: v === "NONE" ? "" : v })}>
+              <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="NONE">Not specified</SelectItem>
+                {["A+","A-","B+","B-","AB+","AB-","O+","O-"].map((bg) => (
+                  <SelectItem key={bg} value={bg}>{bg}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <Field label="Email" v={form.email} on={(v) => setForm({ ...form, email: v })} />
           <Field label="City" v={form.city} on={(v) => setForm({ ...form, city: v })} />
-          <Field label="State" v={form.state} on={(v) => setForm({ ...form, state: v })} />
+          <div>
+            <Label className="mb-1.5 block text-xs">State</Label>
+            <Select value={form.state || "NONE"} onValueChange={(v) => setForm({ ...form, state: v === "NONE" ? "" : v })}>
+              <SelectTrigger><SelectValue placeholder="Select state…" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="NONE">Not specified</SelectItem>
+                {INDIAN_STATES.map((s) => (
+                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <Field label="Pincode" v={form.pincode} on={(v) => setForm({ ...form, pincode: v })} />
         </div>
         <DialogFooter>
