@@ -1,7 +1,7 @@
 ﻿import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { z } from "zod";
-import { ArrowLeft, Check, X, Send, MessageSquare, ClipboardList, XCircle, Download, MessageCircleQuestion, CalendarClock, Bell, MessageSquareMore } from "lucide-react";
+import { ArrowLeft, Check, X, Send, MessageSquare, ClipboardList, XCircle, Ban, Download, MessageCircleQuestion, CalendarClock, Bell, MessageSquareMore } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -75,6 +75,8 @@ function ReferralDetailPage() {
   const [sending, setSending] = useState(false);
   const [declineOpen, setDeclineOpen] = useState(false);
   const [declineReason, setDeclineReason] = useState("");
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
   const messagesEnd = useRef<HTMLDivElement>(null);
   const messagesBox = useRef<HTMLDivElement>(null);
 
@@ -240,6 +242,17 @@ function ReferralDetailPage() {
     });
   };
 
+  const cancel = async () => {
+    setCancelling(true);
+    const ok = await updateStatus({ status: "CANCELLED", cancelled_at: new Date().toISOString() });
+    setCancelling(false);
+    setCancelOpen(false);
+    if (ok) {
+      toast.success("Referral cancelled");
+      router.navigate({ to: "/referrals/" });
+    }
+  };
+
   const sendMessage = async () => {
     if (!draft.trim() || !user || !profile) return;
     const text = draft.trim();
@@ -336,6 +349,12 @@ function ReferralDetailPage() {
               </Button>
             </>
           )}
+
+          {isReferrer && (ref.status === "SENT" || ref.status === "VIEWED" || ref.status === "ACKNOWLEDGED" || ref.status === "ACCEPTED") && (
+            <Button variant="outline" onClick={() => setCancelOpen(true)}>
+              <Ban className="mr-1.5 h-4 w-4" /> Cancel referral
+            </Button>
+          )}
         </div>
 
         {/* Decline dialog */}
@@ -364,6 +383,28 @@ function ReferralDetailPage() {
               </Button>
               <Button variant="destructive" onClick={decline} disabled={!declineReason.trim()}>
                 <XCircle className="mr-1.5 h-4 w-4" /> Confirm decline
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Cancel dialog */}
+        <Dialog open={cancelOpen} onOpenChange={setCancelOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Ban className="h-5 w-5 text-destructive" /> Cancel referral
+              </DialogTitle>
+              <DialogDescription>
+                Are you sure you want to cancel this referral? The specialist will no longer be able to act on it. This cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setCancelOpen(false)}>
+                Keep referral
+              </Button>
+              <Button variant="destructive" onClick={cancel} disabled={cancelling}>
+                <Ban className="mr-1.5 h-4 w-4" /> {cancelling ? "Cancelling…" : "Confirm cancel"}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -475,7 +516,7 @@ function ReferralDetailPage() {
             </Card>
           )}
 
-          {isSpecialist && ref.status === "ACCEPTED" && (
+          {isSpecialist && (ref.status === "ACCEPTED" || ref.status === "APPOINTMENT_BOOKED") && (
             <OutcomeForm referralId={ref.id} onSaved={(patch) => setRef({ ...ref, ...patch })} />
           )}
 
@@ -564,6 +605,8 @@ function AppointmentForm({
     const patch: Record<string, unknown> = {
       appointment_date: new Date(date).toISOString(),
       appointment_notes: notes.trim() || null,
+      status: "APPOINTMENT_BOOKED",
+      appointment_booked_at: new Date().toISOString(),
     };
     const { error } = await supabase.from("referrals").update(patch as never).eq("id", referralId);
     setSaving(false);
