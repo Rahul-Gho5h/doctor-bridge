@@ -1,7 +1,7 @@
 ﻿import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { z } from "zod";
-import { Send, Inbox, ArrowRight, Search, ChevronDown } from "lucide-react";
+import { Send, Inbox, ArrowRight, Search, ChevronDown, X } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/common/PageHeader";
 import { EmptyState } from "@/components/common/EmptyState";
@@ -10,6 +10,8 @@ import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { UrgencyBadge } from "@/components/common/UrgencyBadge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -31,6 +33,7 @@ interface ReferralRow {
   patient_snapshot: { name?: string; age?: number; gender?: string };
   created_at: string;
   sent_at: string | null;
+  updated_at: string;
   referring_doctor_id: string;
   specialist_id: string;
   referring_doctor: { user_id: string; profile: { first_name: string; last_name: string } | null } | null;
@@ -56,6 +59,32 @@ function ReferralsPage() {
   const [hasMoreReceived, setHasMoreReceived] = useState(false);
   const [offsetSent, setOffsetSent]           = useState(0);
   const [offsetReceived, setOffsetReceived]   = useState(0);
+
+  // ── Filter state ─────────────────────────────────────────────────────────────
+  const [search, setSearch]               = useState("");
+  const [statusFilter, setStatusFilter]   = useState("ALL");
+  const [urgencyFilter, setUrgencyFilter] = useState("ALL");
+
+  const hasFilters = search !== "" || statusFilter !== "ALL" || urgencyFilter !== "ALL";
+
+  const applyFilters = useCallback((rows: ReferralRow[]) => {
+    return rows.filter((r) => {
+      if (search) {
+        const q = search.toLowerCase();
+        const name = (r.patient_snapshot?.name ?? "").toLowerCase();
+        const num  = r.referral_number.toLowerCase();
+        if (!name.includes(q) && !num.includes(q)) return false;
+      }
+      if (statusFilter  !== "ALL" && r.status  !== statusFilter)  return false;
+      if (urgencyFilter !== "ALL" && r.urgency !== urgencyFilter) return false;
+      return true;
+    });
+  }, [search, statusFilter, urgencyFilter]);
+
+  const filteredSent     = useMemo(() => applyFilters(sent),     [sent,     applyFilters]);
+  const filteredReceived = useMemo(() => applyFilters(received), [received, applyFilters]);
+
+  const clearFilters = () => { setSearch(""); setStatusFilter("ALL"); setUrgencyFilter("ALL"); };
 
   // Sync tab changes to URL
   const handleTabChange = (value: string) => {
@@ -101,7 +130,7 @@ function ReferralsPage() {
     const { data, error } = await supabase
       .from("referrals")
       .select(`id,referral_number,status,urgency,primary_diagnosis,diagnosis_code,
-        patient_snapshot,created_at,sent_at,referring_doctor_id,specialist_id`)
+        patient_snapshot,created_at,sent_at,updated_at,referring_doctor_id,specialist_id`)
       .eq("referring_doctor_id", myDocId)
       .order("created_at", { ascending: false })
       .range(from, to);
@@ -119,7 +148,7 @@ function ReferralsPage() {
     const { data, error } = await supabase
       .from("referrals")
       .select(`id,referral_number,status,urgency,primary_diagnosis,diagnosis_code,
-        patient_snapshot,created_at,sent_at,referring_doctor_id,specialist_id`)
+        patient_snapshot,created_at,sent_at,updated_at,referring_doctor_id,specialist_id`)
       .eq("specialist_id", myDocId)
       .order("created_at", { ascending: false })
       .range(from, to);
@@ -170,6 +199,61 @@ function ReferralsPage() {
         }
       />
 
+      {/* ── Filter bar ──────────────────────────────────────────────────────── */}
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        {/* Search */}
+        <div className="relative min-w-[220px] flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by patient name or referral number"
+            className="pl-9"
+          />
+        </div>
+
+        {/* Status filter */}
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-[170px]">
+            <SelectValue placeholder="All statuses" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ALL">All statuses</SelectItem>
+            <SelectItem value="SENT">Sent</SelectItem>
+            <SelectItem value="VIEWED">Viewed</SelectItem>
+            <SelectItem value="ACKNOWLEDGED">Acknowledged</SelectItem>
+            <SelectItem value="ACCEPTED">Accepted</SelectItem>
+            <SelectItem value="APPOINTMENT_BOOKED">Appointment booked</SelectItem>
+            <SelectItem value="COMPLETED">Completed</SelectItem>
+            <SelectItem value="DECLINED">Declined</SelectItem>
+            <SelectItem value="CANCELLED">Cancelled</SelectItem>
+          </SelectContent>
+        </Select>
+
+        {/* Urgency filter */}
+        <Select value={urgencyFilter} onValueChange={setUrgencyFilter}>
+          <SelectTrigger className="w-[145px]">
+            <SelectValue placeholder="All urgency" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ALL">All urgency</SelectItem>
+            <SelectItem value="ROUTINE">Routine</SelectItem>
+            <SelectItem value="SEMI_URGENT">Semi-urgent</SelectItem>
+            <SelectItem value="URGENT">Urgent</SelectItem>
+          </SelectContent>
+        </Select>
+
+        {/* Clear */}
+        {hasFilters && (
+          <button
+            onClick={clearFilters}
+            className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <X className="h-3 w-3" /> Clear filters
+          </button>
+        )}
+      </div>
+
       <Tabs value={activeTab} onValueChange={handleTabChange}>
         <TabsList>
           <TabsTrigger value="sent">
@@ -181,12 +265,14 @@ function ReferralsPage() {
         </TabsList>
 
         <TabsContent value="sent" className="mt-4">
-          <ReferralList rows={sent} loading={loading} side="sent"
-            hasMore={hasMoreSent} loadingMore={loadingMoreSent} onLoadMore={loadMoreSent} />
+          <ReferralList rows={filteredSent} loading={loading} side="sent"
+            hasMore={hasMoreSent} loadingMore={loadingMoreSent} onLoadMore={loadMoreSent}
+            filtered={hasFilters} />
         </TabsContent>
         <TabsContent value="received" className="mt-4">
-          <ReferralList rows={received} loading={loading} side="received"
-            hasMore={hasMoreReceived} loadingMore={loadingMoreReceived} onLoadMore={loadMoreReceived} />
+          <ReferralList rows={filteredReceived} loading={loading} side="received"
+            hasMore={hasMoreReceived} loadingMore={loadingMoreReceived} onLoadMore={loadMoreReceived}
+            filtered={hasFilters} />
         </TabsContent>
       </Tabs>
     </DashboardLayout>
@@ -194,14 +280,30 @@ function ReferralsPage() {
   );
 }
 
+const INACTIVE_STATUSES = new Set(["COMPLETED", "CANCELLED", "DECLINED", "EXPIRED"]);
+
+function isRecentlyActive(r: ReferralRow): boolean {
+  if (INACTIVE_STATUSES.has(r.status)) return false;
+  return Date.now() - new Date(r.updated_at).getTime() < 24 * 60 * 60 * 1000;
+}
+
 function ReferralList({
-  rows, loading, side, hasMore, loadingMore, onLoadMore,
+  rows, loading, side, hasMore, loadingMore, onLoadMore, filtered,
 }: {
   rows: ReferralRow[]; loading: boolean; side: "sent" | "received";
   hasMore: boolean; loadingMore: boolean; onLoadMore: () => void;
+  filtered?: boolean;
 }) {
   if (loading) return <TableSkeleton columns={8} rows={5} />;
   if (rows.length === 0) {
+    if (filtered) {
+      return (
+        <div className="rounded-xl border bg-card px-6 py-12 text-center shadow-card">
+          <p className="text-sm font-medium">No referrals match your filters</p>
+          <p className="mt-1 text-xs text-muted-foreground">Try adjusting the search or clearing the filters above.</p>
+        </div>
+      );
+    }
     return (
       <EmptyState
         icon={side === "sent" ? Send : Inbox}
@@ -240,9 +342,18 @@ function ReferralList({
         <tbody className="divide-y">
           {rows.map((r) => {
             const counterparty = side === "sent" ? r.specialist : r.referring_doctor;
+            const active = isRecentlyActive(r);
             return (
               <tr key={r.id} className="hover:bg-muted/30 cursor-pointer" onClick={() => router.navigate({ to: "/referrals/$referralId", params: { referralId: r.id } })}>
-                <td className="px-4 py-3 font-mono text-xs">{r.referral_number}</td>
+                <td className="px-4 py-3 font-mono text-xs">
+                  <div className="flex items-center gap-2">
+                    {active
+                      ? <span className="h-2 w-2 shrink-0 rounded-full bg-[oklch(0.65_0.14_165)] dark:bg-[oklch(0.75_0.18_165)]" title="Recently active" />
+                      : <span className="h-2 w-2 shrink-0" />
+                    }
+                    {r.referral_number}
+                  </div>
+                </td>
                 <td className="px-4 py-3">
                   <div className="font-medium">{r.patient_snapshot?.name ?? "—"}</div>
                   <div className="text-xs text-muted-foreground">
