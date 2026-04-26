@@ -37,6 +37,7 @@ interface PersonalForm {
   title: string;
   specialization: string;
   bio: string;
+  phone: string;
 }
 
 interface ClinicalForm {
@@ -71,6 +72,8 @@ interface DocProfile {
   total_referrals_received: number;
   referral_acceptance_rate: number | null;
   avg_response_time_hours: number | null;
+  unique_referring_doctors: number;
+  profile_completeness: number;
   clinic_id: string | null;
 }
 
@@ -89,7 +92,14 @@ interface AffReq {
 function ProfilePage() {
   const { user, profile } = useAuth();
   const [doc, setDoc] = useState<DocProfile | null>(null);
-  const [hospital, setHospital] = useState<{ id: string; name: string; city: string | null } | null>(null);
+  const [hospital, setHospital] = useState<{
+    id: string; name: string; city: string | null;
+    address: string | null; phone: string | null;
+    working_hours: Record<string, string> | null;
+    equipment: string[] | null;
+    entity_type: string | null;
+    verification_status: string | null;
+  } | null>(null);
   const [requests, setRequests] = useState<AffReq[]>([]);
   const [loading, setLoading] = useState(true);
   const [resignOpen, setResignOpen] = useState(false);
@@ -102,15 +112,27 @@ function ProfilePage() {
         id,nmc_number,nmc_verified,academic_title,teaching_hospital,
         qualifications,sub_specialties,condition_codes,languages_spoken,insurance_panels,
         accepting_referrals,weekly_referral_cap,current_week_referrals,
-        total_referrals_received,referral_acceptance_rate,avg_response_time_hours,clinic_id
+        total_referrals_received,referral_acceptance_rate,avg_response_time_hours,
+        unique_referring_doctors,profile_completeness,clinic_id
       `)
       .eq("user_id", user.id)
       .maybeSingle();
     setDoc(dp as DocProfile | null);
 
     if (dp?.clinic_id) {
-      const { data: h } = await supabase.from("clinics").select("id,name,city").eq("id", dp.clinic_id).maybeSingle();
-      setHospital(h as { id: string; name: string; city: string | null } | null);
+      const { data: h } = await supabase
+        .from("clinics")
+        .select("id,name,city,address,phone,working_hours,equipment,entity_type,verification_status")
+        .eq("id", dp.clinic_id)
+        .maybeSingle();
+      setHospital(h as {
+        id: string; name: string; city: string | null;
+        address: string | null; phone: string | null;
+        working_hours: Record<string, string> | null;
+        equipment: string[] | null;
+        entity_type: string | null;
+        verification_status: string | null;
+      } | null);
     } else {
       setHospital(null);
     }
@@ -197,6 +219,28 @@ function ProfilePage() {
         </div>
       )}
 
+      {/* Fix 5: profile completeness bar */}
+      <div className="mb-6 rounded-xl border bg-card p-4 shadow-card">
+        <div className="flex items-center justify-between text-sm">
+          <span className="font-medium text-foreground">Profile completeness</span>
+          <span className={`font-semibold tabular-nums ${
+            (doc.profile_completeness ?? 0) >= 75 ? "text-success" :
+            (doc.profile_completeness ?? 0) >= 40 ? "text-warning" : "text-destructive"
+          }`}>
+            {doc.profile_completeness ?? 0}%
+          </span>
+        </div>
+        <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+          <div
+            className={`h-full rounded-full transition-all duration-500 ${
+              (doc.profile_completeness ?? 0) >= 75 ? "bg-success" :
+              (doc.profile_completeness ?? 0) >= 40 ? "bg-warning" : "bg-destructive"
+            }`}
+            style={{ width: `${doc.profile_completeness ?? 0}%` }}
+          />
+        </div>
+      </div>
+
       <Tabs defaultValue="personal" className="space-y-6">
         <TabsList className="flex-wrap">
           <TabsTrigger value="personal"><UserCircle className="mr-1.5 h-3.5 w-3.5" />Personal</TabsTrigger>
@@ -208,7 +252,7 @@ function ProfilePage() {
 
         {/* ── Personal ── */}
         <TabsContent value="personal">
-          <PersonalTab profile={profile} userId={user!.id} onSaved={reload} />
+          <PersonalTab userId={user!.id} onSaved={reload} />
         </TabsContent>
 
         {/* ── Clinical ── */}
@@ -224,6 +268,69 @@ function ProfilePage() {
         {/* ── Hospital ── */}
         <TabsContent value="hospital">
           <div className="space-y-6">
+            {/* Your institution — read-only details card (only when affiliated) */}
+            {hospital && (
+              <Card title="Your institution" icon={Building2}>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Name</div>
+                    <div className="mt-0.5 text-sm font-medium">{hospital.name}</div>
+                  </div>
+                  {hospital.entity_type && (
+                    <div>
+                      <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Type</div>
+                      <div className="mt-0.5 text-sm">{hospital.entity_type}</div>
+                    </div>
+                  )}
+                  {hospital.address && (
+                    <div>
+                      <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Address</div>
+                      <div className="mt-0.5 text-sm">{hospital.address}</div>
+                    </div>
+                  )}
+                  {(hospital.city || hospital.verification_status) && (
+                    <div>
+                      <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">City</div>
+                      <div className="mt-0.5 text-sm">{hospital.city ?? "—"}</div>
+                    </div>
+                  )}
+                  {hospital.phone && (
+                    <div>
+                      <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Phone</div>
+                      <div className="mt-0.5 text-sm">{hospital.phone}</div>
+                    </div>
+                  )}
+                  {hospital.working_hours?.text && (
+                    <div>
+                      <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Working hours</div>
+                      <div className="mt-0.5 text-sm">{hospital.working_hours.text}</div>
+                    </div>
+                  )}
+                  {hospital.verification_status && (
+                    <div>
+                      <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Verification</div>
+                      <div className="mt-0.5 text-sm font-medium">{hospital.verification_status}</div>
+                    </div>
+                  )}
+                </div>
+                {hospital.equipment && hospital.equipment.length > 0 && (
+                  <div className="mt-3">
+                    <div className="mb-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">Equipment & facilities</div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {hospital.equipment.map((item) => (
+                        <span key={item} className="inline-flex items-center gap-1 rounded-md bg-primary-soft px-2 py-0.5 text-xs font-medium text-accent-foreground">
+                          {item}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <p className="mt-3 text-xs text-muted-foreground">
+                  These details are managed by your institution admin. Contact them to request changes.
+                </p>
+              </Card>
+            )}
+
             {/* Current affiliation */}
             <Card title="Current affiliation" icon={Building2}>
               {hospital ? (
@@ -318,28 +425,51 @@ function ProfilePage() {
 
 // ─── Personal tab ─────────────────────────────────────────────────────────────
 
-function PersonalTab({ profile, userId, onSaved }: {
-  profile: { first_name: string; last_name: string; title: string | null; specialization?: string | null; bio?: string | null } | null;
+function PersonalTab({ userId, onSaved }: {
   userId: string;
   onSaved: () => void;
 }) {
   const [form, setForm] = useState<PersonalForm>({
-    first_name: profile?.first_name ?? "",
-    last_name: profile?.last_name ?? "",
-    title: profile?.title ?? "",
-    specialization: (profile as any)?.specialization ?? "",
-    bio: (profile as any)?.bio ?? "",
+    first_name: "", last_name: "", title: "",
+    specialization: "", bio: "", phone: "",
   });
-  const [saving, setSaving] = useState(false);
+  const [email, setEmail]                 = useState("");
+  const [loadingProfile, setLoadingProfile] = useState(true);
+  const [saving, setSaving]               = useState(false);
+
+  // ── Fix 1: fetch all fields directly from the DB ─────────────────────────
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("first_name,last_name,title,specialization,bio,phone,email")
+        .eq("id", userId)
+        .single();
+      if (data) {
+        const d = data as any;
+        setForm({
+          first_name:    d.first_name    ?? "",
+          last_name:     d.last_name     ?? "",
+          title:         d.title         ?? "",
+          specialization: d.specialization ?? "",
+          bio:           d.bio           ?? "",
+          phone:         d.phone         ?? "",
+        });
+        setEmail(d.email ?? "");
+      }
+      setLoadingProfile(false);
+    })();
+  }, [userId]);
 
   const save = async () => {
     setSaving(true);
     const { error } = await supabase.from("profiles").update({
-      first_name: form.first_name.trim(),
-      last_name: form.last_name.trim(),
-      title: form.title.trim() || null,
+      first_name:    form.first_name.trim(),
+      last_name:     form.last_name.trim(),
+      title:         form.title.trim()         || null,
       specialization: form.specialization.trim() || null,
-      bio: form.bio.trim() || null,
+      bio:           form.bio.trim()           || null,
+      phone:         form.phone.trim()         || null,
     }).eq("id", userId);
     setSaving(false);
     if (error) toast.error(error.message);
@@ -352,11 +482,27 @@ function PersonalTab({ profile, userId, onSaved }: {
       setForm((p) => ({ ...p, [k]: e.target.value })),
   });
 
+  if (loadingProfile) {
+    return (
+      <Card title="Personal information" icon={UserCircle}>
+        <div className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
+          <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          Loading…
+        </div>
+      </Card>
+    );
+  }
+
   return (
     <Card title="Personal information" icon={UserCircle}>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="First name"><Input {...f("first_name")} /></Field>
         <Field label="Last name"><Input {...f("last_name")} /></Field>
+        {/* Fix 2: email read-only display + phone field */}
+        <Field label="Email">
+          <Input value={email} onChange={() => {}} disabled />
+        </Field>
+        <Field label="Phone"><Input {...f("phone")} placeholder="+91 98765 43210" /></Field>
         <Field label="Title (e.g. Dr., Prof.)"><Input {...f("title")} placeholder="Dr." /></Field>
         <Field label="Specialization"><Input {...f("specialization")} placeholder="e.g. Cardiology" /></Field>
       </div>
@@ -376,26 +522,26 @@ function PersonalTab({ profile, userId, onSaved }: {
 
 function ClinicalTab({ doc, onSaved }: { doc: DocProfile; onSaved: () => void }) {
   const [form, setForm] = useState<ClinicalForm>({
-    academic_title: doc.academic_title ?? "",
+    academic_title:    doc.academic_title    ?? "",
     teaching_hospital: doc.teaching_hospital ?? "",
-    qualifications: doc.qualifications,
-    sub_specialties: doc.sub_specialties,
-    condition_codes: doc.condition_codes,
-    languages_spoken: doc.languages_spoken,
-    insurance_panels: doc.insurance_panels,
+    qualifications:    doc.qualifications,
+    sub_specialties:   doc.sub_specialties,
+    condition_codes:   doc.condition_codes,
+    languages_spoken:  doc.languages_spoken,
+    insurance_panels:  doc.insurance_panels,
   });
   const [saving, setSaving] = useState(false);
 
   const save = async () => {
     setSaving(true);
     const { error } = await supabase.from("doctor_profiles").update({
-      academic_title: form.academic_title.trim() || null,
+      academic_title:    form.academic_title.trim()    || null,
       teaching_hospital: form.teaching_hospital.trim() || null,
-      qualifications: form.qualifications,
-      sub_specialties: form.sub_specialties,
-      condition_codes: form.condition_codes,
-      languages_spoken: form.languages_spoken,
-      insurance_panels: form.insurance_panels,
+      qualifications:    form.qualifications,
+      sub_specialties:   form.sub_specialties,
+      condition_codes:   form.condition_codes,
+      languages_spoken:  form.languages_spoken,
+      insurance_panels:  form.insurance_panels,
     }).eq("id", doc.id);
     setSaving(false);
     if (error) toast.error(error.message);
@@ -523,11 +669,12 @@ function AvailabilityTab({ doc, onSaved }: { doc: DocProfile; onSaved: () => voi
           </p>
         </Field>
 
-        {/* Stats summary */}
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          <StatCard label="Total received" value={String(doc.total_referrals_received)} />
-          <StatCard label="Acceptance rate" value={doc.referral_acceptance_rate !== null ? `${doc.referral_acceptance_rate}%` : "—"} />
-          <StatCard label="Avg response" value={doc.avg_response_time_hours !== null ? `${doc.avg_response_time_hours}h` : "—"} />
+        {/* Stats summary — Fix 4: added Referring doctors */}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <StatCard label="Total received"    value={String(doc.total_referrals_received)} />
+          <StatCard label="Acceptance rate"   value={doc.referral_acceptance_rate !== null ? `${doc.referral_acceptance_rate}%` : "—"} />
+          <StatCard label="Avg response"      value={doc.avg_response_time_hours  !== null ? `${doc.avg_response_time_hours}h`  : "—"} />
+          <StatCard label="Referring doctors" value={String(doc.unique_referring_doctors)} />
         </div>
 
         <div className="flex justify-end">
