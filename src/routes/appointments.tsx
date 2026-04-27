@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/appointments")({
-  head: () => ({ meta: [{ title: "Appointments — Doctor Bridge" }] }),
+  head: () => ({ meta: [{ title: "Appointments - Doctor Bridge" }] }),
   component: AppointmentsPage,
 });
 

@@ -20,7 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/staff")({
-  head: () => ({ meta: [{ title: "Doctors — Doctor Bridge" }] }),
+  head: () => ({ meta: [{ title: "Doctors - Doctor Bridge" }] }),
   component: StaffPage,
 });
 

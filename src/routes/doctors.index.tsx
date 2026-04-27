@@ -1,4 +1,4 @@
-﻿import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useState, useCallback } from "react";
 import { Search, Stethoscope, MapPin, Languages, CheckCircle2, Send, ChevronDown } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
@@ -40,9 +40,17 @@ interface DoctorRow {
 
 const DOC_PAGE_SIZE = 12;
 
+const SPECIALTIES = [
+  "General Medicine", "Cardiology", "Neurology", "Orthopaedics", "Gynaecology",
+  "Paediatrics", "Dermatology", "Psychiatry", "Ophthalmology", "ENT",
+  "Urology", "Nephrology", "Gastroenterology", "Pulmonology", "Oncology",
+  "Endocrinology", "Radiology", "Anaesthesiology", "Surgery",
+] as const;
+
 function FindDoctors() {
   const router = useRouter();
   const [conditionCode, setConditionCode] = useState<string>("ALL");
+  const [specialtyFilter, setSpecialtyFilter] = useState("ALL");
   const [city, setCity] = useState("");
   const [search, setSearch] = useState("");
   const [doctors, setDoctors] = useState<DoctorRow[]>([]);
@@ -117,14 +125,15 @@ function FindDoctors() {
     setLoadingMore(false);
   };
 
-  // When city/search active we already fetched all — filter in-memory for instant UX
+  // When city/search/specialty active we already fetched all — filter in-memory for instant UX
   const filtered = doctors.filter((d) => {
     const cityMatch = !city || (d.clinic?.city ?? "").toLowerCase().includes(city.toLowerCase());
     const term = search.toLowerCase();
     const name = `${d.profile?.first_name ?? ""} ${d.profile?.last_name ?? ""}`.toLowerCase();
     const subs = d.sub_specialties.join(" ").toLowerCase();
     const searchMatch = !term || name.includes(term) || subs.includes(term) || (d.profile?.specialization ?? "").toLowerCase().includes(term);
-    return cityMatch && searchMatch;
+    const specMatch = specialtyFilter === "ALL" || (d.profile?.specialization ?? "").toLowerCase().includes(specialtyFilter.toLowerCase());
+    return cityMatch && searchMatch && specMatch;
   });
 
   return (
@@ -135,7 +144,7 @@ function FindDoctors() {
         description="Search verified doctors by condition, sub-specialty, or city."
       />
 
-      <div className="mb-6 grid gap-3 rounded-xl border bg-card p-4 sm:grid-cols-3">
+      <div className="mb-6 grid gap-3 rounded-xl border bg-card p-4 sm:grid-cols-4">
         <div>
           <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Condition (ICD-10)</label>
           <Select value={conditionCode} onValueChange={setConditionCode}>
@@ -147,6 +156,31 @@ function FindDoctors() {
               ))}
             </SelectContent>
           </Select>
+        </div>
+        <div>
+          <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Specialty</label>
+          <div className="flex gap-1.5">
+            <Select value={specialtyFilter} onValueChange={setSpecialtyFilter}>
+              <SelectTrigger className="flex-1"><SelectValue placeholder="All specialties" /></SelectTrigger>
+              <SelectContent className="max-h-[300px]">
+                <SelectItem value="ALL">All specialties</SelectItem>
+                {SPECIALTIES.map((s) => (
+                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {specialtyFilter !== "ALL" && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="shrink-0 px-2 text-muted-foreground hover:text-foreground"
+                onClick={() => setSpecialtyFilter("ALL")}
+                title="Clear specialty filter"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
         </div>
         <div>
           <label className="mb-1.5 block text-xs font-medium text-muted-foreground">City</label>
@@ -166,9 +200,9 @@ function FindDoctors() {
       ) : filtered.length === 0 ? (
         <EmptyState
           icon={Stethoscope}
-          title={conditionCode !== "ALL" || city || search ? "No specialists match your filters" : "No specialists yet"}
+          title={conditionCode !== "ALL" || specialtyFilter !== "ALL" || city || search ? "No specialists match your filters" : "No specialists yet"}
           description={
-            conditionCode !== "ALL" || city || search
+            conditionCode !== "ALL" || specialtyFilter !== "ALL" || city || search
               ? "Try clearing the condition filter, changing the city, or searching by a different name."
               : "Specialists will appear here once they complete their profile and set it to public."
           }
