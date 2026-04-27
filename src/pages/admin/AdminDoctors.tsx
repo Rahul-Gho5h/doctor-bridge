@@ -536,6 +536,7 @@ function OnboardDoctorModal({ clinicId, onCreated }: { clinicId: string; onCreat
 export function AdminDoctors() {
   const { profile } = useAuth();
   const clinicId = profile?.clinic_id ?? "";
+
   const { refetch } = useHospitalDoctorLinks(clinicId);
 
   return (

@@ -176,7 +176,8 @@ export function useHospitalDoctorLinks(hospitalClinicId: string) {
   return useQuery({
     queryKey: HOSPITAL_DOCTOR_LINKS_KEY(hospitalClinicId),
     queryFn: async (): Promise<HospitalDoctorLink[]> => {
-      const { data, error } = await supabase
+      // Step 1 — fetch links + doctor_profiles via the valid FK
+      const { data: links, error: linksError } = await supabase
         .from("hospital_doctor_links")
         .select(
           `
@@ -196,20 +197,33 @@ export function useHospitalDoctorLinks(hospitalClinicId: string) {
             nmc_number,
             qualifications,
             sub_specialties
-          ),
-          profile:profiles!hospital_doctor_links_doctor_user_id_fkey (
-            first_name,
-            last_name,
-            email,
-            avatar
           )
           `
         )
         .eq("hospital_clinic_id", hospitalClinicId)
         .order("joined_at", { ascending: false });
 
-      if (error) throw error;
-      return (data ?? []) as HospitalDoctorLink[];
+      if (linksError) throw linksError;
+      if (!links || links.length === 0) return [];
+
+      // Step 2 — fetch profiles for all doctor_user_ids in one query
+      const userIds = links.map((l: any) => l.doctor_user_id as string);
+      const { data: profiles, error: profilesError } = await supabase
+        .from("profiles")
+        .select("id, first_name, last_name, email, avatar")
+        .in("id", userIds);
+
+      if (profilesError) throw profilesError;
+
+      // Step 3 — stitch profiles onto each link by doctor_user_id
+      const profileMap = new Map(
+        (profiles ?? []).map((p: any) => [p.id as string, p])
+      );
+
+      return links.map((link: any) => ({
+        ...link,
+        profile: profileMap.get(link.doctor_user_id) ?? null,
+      })) as HospitalDoctorLink[];
     },
     enabled: Boolean(hospitalClinicId),
     refetchInterval: 30_000, // auto-refresh every 30 s without a manual page reload
