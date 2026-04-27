@@ -84,6 +84,12 @@ export interface AnalyticsContext {
   topConditions: { name: string; count: number }[];
   byStatus: { name: string; value: number }[];
   trend: { month: string; sent: number; received: number }[];
+  // Extended fields (optional — populated by the enriched analytics page)
+  uniquePatients?: number;
+  totalEncounters?: number;
+  capacityPct?: number;
+  funnelData?: { stage: string; count: number; pct: number }[];
+  outcomeData?: { name: string; value: number }[];
 }
 
 export async function getAnalyticsInsightsAI(
@@ -102,17 +108,29 @@ export async function getAnalyticsInsightsAI(
       ? `Last month ${lastTwo[1].sent + lastTwo[1].received} total vs previous ${lastTwo[0].sent + lastTwo[0].received}`
       : "insufficient trend data";
 
-  const prompt = `Doctor Bridge practice analytics summary (last 6 months):
+  const funnelStr = ctx.funnelData
+    ? ctx.funnelData.map((f) => `${f.stage}: ${f.count} (${f.pct}% from prev)`).join(" → ")
+    : "not available";
+  const outcomeStr = ctx.outcomeData?.length
+    ? ctx.outcomeData.map((o) => `${o.name}: ${o.value}`).join(", ")
+    : "none recorded";
+
+  const prompt = `Doctor Bridge practice analytics summary:
 - Referrals sent: ${ctx.sent}
 - Referrals received: ${ctx.received}
 - Referral acceptance rate: ${ctx.acceptance}%
 - Average response time: ${ctx.avgResponse > 0 ? ctx.avgResponse + "h" : "not available"}
+- Capacity utilisation: ${ctx.capacityPct !== undefined ? ctx.capacityPct + "%" : "not available"}
 - Top conditions referred: ${topList || "none yet"}
 - Received referrals by status: ${statusList || "none"}
 - Volume trend: ${trendStr}
+- Referral funnel: ${funnelStr}
+- Outcome distribution: ${outcomeStr}
+- Patient encounters logged: ${ctx.totalEncounters ?? "unknown"}
+- Unique patients seen: ${ctx.uniquePatients ?? "unknown"}
 
-Analyse this doctor's practice performance and provide 3-4 specific, data-driven insights. 
-Include observations on: efficiency (acceptance rate, response time), workload patterns, top conditions (template suggestions), and any concerning trends.
+Analyse this doctor's practice performance and provide 3-4 specific, data-driven insights.
+Include observations on: efficiency (acceptance rate, response time), patient engagement (funnel drop-off, outcomes), workload patterns, and any concerning trends.
 Use level "alert" for issues needing attention, "success" for strong metrics, "tip" for efficiency suggestions, "info" for neutral observations.`;
 
   const aiResult = await callOpenAI(prompt);
