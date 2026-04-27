@@ -1,4 +1,4 @@
-﻿import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, useCallback, KeyboardEvent } from "react";
 import {
   UserCircle, Building2, Search, LogOut as LeaveIcon, Save, X,
@@ -103,27 +103,87 @@ function ProfilePage() {
   const [requests, setRequests] = useState<AffReq[]>([]);
   const [loading, setLoading] = useState(true);
   const [resignOpen, setResignOpen] = useState(false);
+  const [computedCompleteness, setComputedCompleteness] = useState(0);
 
   const reload = useCallback(async () => {
     if (!user) return;
-    const { data: dp } = await supabase
-      .from("doctor_profiles")
-      .select(`
-        id,nmc_number,nmc_verified,academic_title,teaching_hospital,
-        qualifications,sub_specialties,condition_codes,languages_spoken,insurance_panels,
-        accepting_referrals,weekly_referral_cap,current_week_referrals,
-        total_referrals_received,referral_acceptance_rate,avg_response_time_hours,
-        unique_referring_doctors,profile_completeness,clinic_id
-      `)
-      .eq("user_id", user.id)
-      .maybeSingle();
-    setDoc(dp as DocProfile | null);
 
-    if (dp?.clinic_id) {
+    // Fire all independent queries in parallel
+    const [
+      { data: dp },
+      { data: prof },
+      { data: activeLinks },
+      { data: reqs },
+    ] = await Promise.all([
+      supabase
+        .from("doctor_profiles")
+        .select(`
+          id,nmc_number,nmc_verified,academic_title,teaching_hospital,
+          qualifications,sub_specialties,condition_codes,languages_spoken,insurance_panels,
+          accepting_referrals,weekly_referral_cap,current_week_referrals,
+          total_referrals_received,referral_acceptance_rate,avg_response_time_hours,
+          unique_referring_doctors,profile_completeness,clinic_id
+        `)
+        .eq("user_id", user.id)
+        .maybeSingle(),
+      supabase
+        .from("profiles")
+        .select("first_name,last_name,phone,specialization,bio,avatar")
+        .eq("id", user.id)
+        .maybeSingle(),
+      supabase
+        .from("hospital_doctor_links")
+        .select("id")
+        .eq("doctor_user_id", user.id)
+        .eq("status", "ACTIVE")
+        .limit(1),
+      supabase
+        .from("affiliation_requests")
+        .select("id,hospital_clinic_id,hospital_name,initiated_by,status,message,created_at")
+        .eq("doctor_user_id", user.id)
+        .order("created_at", { ascending: false }),
+    ]);
+
+    setDoc(dp as DocProfile | null);
+    setRequests((reqs ?? []) as AffReq[]);
+
+    // ── Compute profile completeness ──────────────────────────────────────────
+    if (dp) {
+      const p = prof as any;
+      const d = dp as any;
+
+      let score = 0;
+      // profiles fields
+      if (p?.first_name?.trim() && p?.last_name?.trim()) score += 10; // 10 pts
+      if (p?.phone?.trim())                               score +=  5; //  5 pts
+      if (p?.specialization?.trim())                      score += 10; // 10 pts
+      if (p?.bio?.trim())                                 score +=  5; //  5 pts
+      if (p?.avatar?.trim())                              score +=  5; //  5 pts
+      // doctor_profiles fields
+      if (d.nmc_number?.trim())                           score += 15; // 15 pts
+      if (d.qualifications?.length  > 0)                 score += 10; // 10 pts
+      if (d.sub_specialties?.length > 0)                 score += 10; // 10 pts
+      if (d.languages_spoken?.length > 0)                score +=  5; //  5 pts
+      if (d.condition_codes?.length  > 0)                score += 10; // 10 pts
+      // hospital affiliation (active link)
+      if ((activeLinks ?? []).length > 0)                 score += 15; // 15 pts
+      // total = 100
+
+      setComputedCompleteness(score);
+
+      // Persist back to DB asynchronously (fire-and-forget; don't block UI)
+      void supabase
+        .from("doctor_profiles")
+        .update({ profile_completeness: score })
+        .eq("id", d.id);
+    }
+
+    // Clinic details — only needed if doc has a clinic_id
+    if ((dp as any)?.clinic_id) {
       const { data: h } = await supabase
         .from("clinics")
         .select("id,name,city,address,phone,working_hours,equipment,entity_type,verification_status")
-        .eq("id", dp.clinic_id)
+        .eq("id", (dp as any).clinic_id)
         .maybeSingle();
       setHospital(h as {
         id: string; name: string; city: string | null;
@@ -137,12 +197,6 @@ function ProfilePage() {
       setHospital(null);
     }
 
-    const { data: reqs } = await supabase
-      .from("affiliation_requests")
-      .select("id,hospital_clinic_id,hospital_name,initiated_by,status,message,created_at")
-      .eq("doctor_user_id", user.id)
-      .order("created_at", { ascending: false });
-    setRequests((reqs ?? []) as AffReq[]);
     setLoading(false);
   }, [user]);
 
@@ -219,24 +273,24 @@ function ProfilePage() {
         </div>
       )}
 
-      {/* Fix 5: profile completeness bar */}
+      {/* Profile completeness bar — driven by client-computed score */}
       <div className="mb-6 rounded-xl border bg-card p-4 shadow-card">
         <div className="flex items-center justify-between text-sm">
           <span className="font-medium text-foreground">Profile completeness</span>
           <span className={`font-semibold tabular-nums ${
-            (doc.profile_completeness ?? 0) >= 75 ? "text-success" :
-            (doc.profile_completeness ?? 0) >= 40 ? "text-warning" : "text-destructive"
+            computedCompleteness >= 75 ? "text-success" :
+            computedCompleteness >= 40 ? "text-warning" : "text-destructive"
           }`}>
-            {doc.profile_completeness ?? 0}%
+            {computedCompleteness}%
           </span>
         </div>
         <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
           <div
             className={`h-full rounded-full transition-all duration-500 ${
-              (doc.profile_completeness ?? 0) >= 75 ? "bg-success" :
-              (doc.profile_completeness ?? 0) >= 40 ? "bg-warning" : "bg-destructive"
+              computedCompleteness >= 75 ? "bg-success" :
+              computedCompleteness >= 40 ? "bg-warning" : "bg-destructive"
             }`}
-            style={{ width: `${doc.profile_completeness ?? 0}%` }}
+            style={{ width: `${computedCompleteness}%` }}
           />
         </div>
       </div>
