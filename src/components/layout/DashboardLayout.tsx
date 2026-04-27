@@ -149,6 +149,47 @@ function PageSkeleton() {
 }
 
 // ---------------------------------------------------------------------------
+// Route → subtitle description map
+// ---------------------------------------------------------------------------
+
+const PAGE_CONTEXT: Record<string, string> = {
+  "/dashboard":           "Overview of your practice activity",
+  "/patients":            "Search and manage patient records",
+  "/emr":                 "Electronic medical records",
+  "/referrals":           "Send and track specialist referrals",
+  "/referrals/new":       "Create a new referral",
+  "/discussions":         "Multi-doctor case collaboration",
+  "/messages":            "Direct messages with colleagues",
+  "/doctors":             "Find verified specialists",
+  "/profile":             "Your professional profile",
+  "/availability":        "Manage your schedule and block dates",
+  "/cme":                 "CME / CPD progress tracking",
+  "/analytics":           "Practice analytics and insights",
+  "/settings":            "Account and practice settings",
+  "/onboarding":          "Complete your profile setup",
+  "/affiliations":        "Hospital affiliation requests",
+  "/appointments":        "Appointment management",
+  "/hospital/doctors":    "Your affiliated doctors",
+  "/admin/dashboard":     "Clinic administration overview",
+  "/admin/doctors":       "Manage clinic doctors",
+  "/platform":            "Internal platform administration",
+  "/platform/doctors":    "Doctor registry",
+  "/platform/institutions": "Institution registry",
+  "/platform/analytics":  "Platform-wide analytics",
+  "/platform/reports":    "Generated reports",
+};
+
+function getPageContext(pathname: string): string {
+  // Exact match first
+  if (PAGE_CONTEXT[pathname]) return PAGE_CONTEXT[pathname];
+  // Prefix match (longest wins)
+  const match = Object.keys(PAGE_CONTEXT)
+    .filter((k) => pathname.startsWith(k))
+    .sort((a, b) => b.length - a.length)[0];
+  return match ? PAGE_CONTEXT[match] : "Doctor Bridge — verified clinical network";
+}
+
+// ---------------------------------------------------------------------------
 // Main layout
 // ---------------------------------------------------------------------------
 
@@ -259,13 +300,13 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
       {/* Nav */}
       {authReady ? (
-        <nav className="flex-1 overflow-y-auto px-3 py-4">
+        <nav className="flex-1 overflow-y-auto px-3 py-3">
           {SECTIONS.map((section) => {
             const items = section.items.filter(visible);
             if (items.length === 0) return null;
             return (
-              <div key={section.title + section.items[0]?.to} className="mb-5">
-                <div className="px-2 pb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              <div key={section.title + section.items[0]?.to} className="mb-4">
+                <div className="px-2 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/40">
                   {section.title}
                 </div>
                 <ul className="space-y-0.5">
@@ -280,13 +321,13 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                         <Link
                           to={item.to}
                           className={cn(
-                            "flex items-center gap-3 rounded-md px-2.5 py-2 text-sm font-medium transition-colors",
+                            "flex items-center gap-2.5 rounded-md py-1.5 pr-2.5 text-[13px] font-medium transition-all duration-150",
                             active
-                              ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                              : "text-sidebar-foreground hover:bg-sidebar-accent/60",
+                              ? "border-l-2 border-sidebar-accent bg-sidebar-foreground/10 pl-2 text-sidebar-foreground"
+                              : "pl-2.5 text-sidebar-foreground/65 hover:bg-sidebar-foreground/8 hover:text-sidebar-foreground",
                           )}
                         >
-                          <Icon className="h-4 w-4" />
+                          <Icon className="h-3.5 w-3.5 shrink-0" />
                           {item.label}
                         </Link>
                       </li>
@@ -316,9 +357,6 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 {isSuperAdmin ? "Platform Admin" : accountType === "doctor" ? "Doctor" : accountType === "hospital_admin" ? "Hospital" : "Clinic"}
               </span>
             </div>
-            <Button variant="ghost" size="icon" onClick={handleLogout} aria-label="Sign out">
-              <LogOut className="h-4 w-4" />
-            </Button>
           </div>
         </div>
       ) : (
@@ -371,9 +409,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                         : "Clinic workspace"}
               </div>
               <div className="text-xs text-muted-foreground">
-                {isSuperAdmin
-                  ? "Internal platform administration"
-                  : "India defaults: INR, Asia/Kolkata, verified doctors only"}
+                {getPageContext(pathname)}
               </div>
             </div>
           ) : (

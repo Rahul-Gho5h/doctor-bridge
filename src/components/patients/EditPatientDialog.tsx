@@ -87,7 +87,7 @@ export function EditPatientDialog({ patient, onSaved }: { patient: Patient; onSa
           <Pencil className="mr-1.5 h-3.5 w-3.5" />Edit profile
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-xl">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Edit patient profile</DialogTitle>
           <DialogDescription>Updates are visible to all doctors with access. Identity (name, phone, DOB) cannot be changed.</DialogDescription>

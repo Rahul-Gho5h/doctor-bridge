@@ -44,7 +44,9 @@
       "PowerShell($env:PATH -split \";\" | ForEach-Object { if \\(Test-Path \"$_\\\\supabase.exe\"\\) { \"$_\\\\supabase.exe\" } elseif \\(Test-Path \"$_\\\\supabase\"\\) { \"$_\\\\supabase\" } })",
       "Bash(iconv -f UTF-16LE -t UTF-8 'C:\\\\Users\\\\Rahul Ghosh\\\\Documents\\\\Agentica Company\\\\Products\\\\doctorlink-pro-main\\\\doctorlink-pro-main\\\\src\\\\integrations\\\\supabase\\\\types.ts')",
       "Read(//tmp/**)",
-      "Bash(python3)"
+      "Bash(python3)",
+      "Bash(node scripts/seed-hospitals.js)",
+      "Bash(node scripts/seed-patients.js)"
     ]
   }
 }

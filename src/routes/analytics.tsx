@@ -1,10 +1,10 @@
-﻿import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
   ResponsiveContainer, BarChart, Bar, LineChart, Line,
   XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell, Legend,
 } from "recharts";
-import { TrendingUp } from "lucide-react";
+import { TrendingUp, Sparkles, CheckCircle2, Lightbulb, AlertCircle, Info } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/common/PageHeader";
 import { EmptyState } from "@/components/common/EmptyState";
@@ -12,6 +12,7 @@ import { AnalyticsSkeleton } from "@/components/common/Skeletons";
 import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { getAnalyticsInsightsAI, type Insight } from "@/lib/aiInsights";
 
 export const Route = createFileRoute("/analytics")({
   head: () => ({ meta: [{ title: "Analytics — Doctor Bridge" }] }),
@@ -45,6 +46,8 @@ function AnalyticsPage() {
   const [summary, setSummary]             = useState({
     sent: 0, received: 0, acceptance: 0, avgResponse: 0,
   });
+  const [analyticsInsights, setAnalyticsInsights] = useState<Insight[]>([]);
+  const [insightsLoading, setInsightsLoading]     = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -177,6 +180,16 @@ function AnalyticsPage() {
     return () => { cancelled = true; };
   }, [user]);
 
+  // AI Insights — async OpenAI call, fires once data is loaded
+  useEffect(() => {
+    if (loading || !hasData) return;
+    let cancelled = false;
+    setInsightsLoading(true);
+    getAnalyticsInsightsAI({ sent: summary.sent, received: summary.received, acceptance: summary.acceptance, avgResponse: summary.avgResponse, topConditions, byStatus, trend })
+      .then((result) => { if (!cancelled) { setAnalyticsInsights(result); setInsightsLoading(false); } });
+    return () => { cancelled = true; };
+  }, [loading, hasData, summary, topConditions, byStatus, trend]);
+
   return (
     <ErrorBoundary>
     <DashboardLayout>
@@ -195,6 +208,8 @@ function AnalyticsPage() {
         />
       ) : (
         <>
+          {/* ── AI Insights ─────────────────────────────────────────────────── */}
+          <AIInsightsPanel insights={analyticsInsights} loading={insightsLoading} />
           {/* ── KPI row ───────────────────────────────────────────────────── */}
           <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <KPI label="Referrals sent (6mo)"     value={String(summary.sent)}          />
@@ -317,6 +332,79 @@ function Empty() {
   return (
     <div className="flex h-[260px] items-center justify-center text-sm text-muted-foreground">
       Not enough data yet.
+    </div>
+  );
+}
+
+// ── AI Insights panel ────────────────────────────────────────────────────────
+
+const INSIGHT_CONFIG: Record<
+  Insight["level"],
+  { icon: React.ComponentType<{ className?: string }>; bg: string; border: string; iconCls: string }
+> = {
+  success: { icon: CheckCircle2, bg: "bg-success/10",  border: "border-success/20",  iconCls: "text-success-foreground" },
+  tip:     { icon: Lightbulb,    bg: "bg-primary/8",   border: "border-primary/20",  iconCls: "text-primary" },
+  alert:   { icon: AlertCircle,  bg: "bg-warning/10",  border: "border-warning/30",  iconCls: "text-warning-foreground" },
+  info:    { icon: Info,         bg: "bg-info/10",     border: "border-info/20",     iconCls: "text-info-foreground" },
+};
+
+function AIInsightsPanel({ insights, loading }: { insights: Insight[]; loading?: boolean }) {
+  if (!loading && insights.length === 0) return null;
+  return (
+    <div className="mb-6 rounded-xl border bg-card shadow-card overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between gap-3 border-b px-5 py-3.5">
+        <div className="flex items-center gap-2">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
+            <Sparkles className={`h-3.5 w-3.5 text-primary ${loading ? "animate-pulse" : ""}`} />
+          </div>
+          <span className="text-sm font-semibold">AI Practice Insights</span>
+          {loading ? (
+            <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground animate-pulse">Analysing…</span>
+          ) : (
+            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
+              {insights.length} insight{insights.length > 1 ? "s" : ""}
+            </span>
+          )}
+        </div>
+        <p className="text-[10px] text-muted-foreground hidden sm:block">
+          Suggestions only · always apply clinical judgement
+        </p>
+      </div>
+      {/* Loading shimmer */}
+      {loading && insights.length === 0 && (
+        <div className="divide-y">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="flex gap-3 px-5 py-4 animate-pulse">
+              <div className="mt-0.5 h-6 w-6 shrink-0 rounded-full bg-muted" />
+              <div className="flex-1 space-y-2">
+                <div className="h-3.5 w-2/5 rounded bg-muted" />
+                <div className="h-3 w-4/5 rounded bg-muted" />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      {/* Insights list */}
+      {insights.length > 0 && (
+        <div className="divide-y">
+          {insights.map((ins, i) => {
+            const cfg = INSIGHT_CONFIG[ins.level];
+            const Icon = cfg.icon;
+            return (
+              <div key={i} className={`flex gap-3 px-5 py-4 ${cfg.bg}`}>
+                <div className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border ${cfg.border} bg-background/60`}>
+                  <Icon className={`h-3.5 w-3.5 ${cfg.iconCls}`} />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-foreground">{ins.title}</p>
+                  <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">{ins.body}</p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

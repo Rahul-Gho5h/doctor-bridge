@@ -405,7 +405,7 @@ function CreateDoctorDialog({ onCreated }: { onCreated: () => void }) {
           Create Doctor Account
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>Create New Doctor</DialogTitle>
           <DialogDescription>

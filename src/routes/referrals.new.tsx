@@ -1,4 +1,4 @@
-﻿import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import {
@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/common/PageHeader";
+import { UrgencyBadge } from "@/components/common/UrgencyBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -91,11 +92,20 @@ function NewReferralPage() {
   const [savingTemplate, setSavingTemplate] = useState(false);
   const [showSaveInput, setShowSaveInput] = useState(false);
 
+  // ── Load patients via RPC (bypasses RLS) on mount ──────────────────────────
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      const { data: pts, error: ptsErr } = await supabase.rpc("search_global_patients", { _q: "" });
+      console.log("search_global_patients result:", pts, ptsErr);
+      if (pts) setPatients(pts as PatientLite[]);
+    })();
+  }, [user]);
+
   useEffect(() => {
     if (!user || !profile) return;
     (async () => {
-      const [{ data: pts }, { data: docs }, { data: meDoc }, { data: clinic }] = await Promise.all([
-        supabase.from("global_patients").select("id,display_id,first_name,last_name,date_of_birth,gender,phone,chronic_conditions,allergies,current_medications").order("first_name"),
+      const [{ data: docs }, { data: meDoc }, { data: clinic }] = await Promise.all([
         supabase.from("doctor_profiles").select("id,user_id,clinic_id,nmc_number").eq("is_public", true),
         supabase.from("doctor_profiles").select("id").eq("user_id", user.id).maybeSingle(),
         profile.clinic_id
@@ -127,7 +137,7 @@ function NewReferralPage() {
           clinic: (clinicMap.get(d.clinic_id) as DoctorLite["clinic"]) ?? null,
         }));
 
-      setPatients((pts ?? []) as PatientLite[]);
+
       setSpecialists(enrichedDocs);
       setMyDoctorProfileId(meDoc?.id ?? null);
       setOriginatingClinic(clinic);
@@ -398,9 +408,9 @@ function NewReferralPage() {
               <div className="mt-3 rounded-md bg-muted/50 p-3 text-xs">
                 <div className="font-medium text-foreground">{selectedPatient.first_name} {selectedPatient.last_name}</div>
                 <div className="text-muted-foreground">{age(selectedPatient.date_of_birth)}y · {selectedPatient.gender} · {selectedPatient.phone}</div>
-                {selectedPatient.chronic_conditions.length > 0 && (
+                {(selectedPatient.chronic_conditions ?? []).length > 0 && (
                   <div className="mt-1 text-muted-foreground">
-                    Chronic: <span className="text-foreground">{selectedPatient.chronic_conditions.join(", ")}</span>
+                    Chronic: <span className="text-foreground">{(selectedPatient.chronic_conditions ?? []).join(", ")}</span>
                   </div>
                 )}
               </div>
@@ -629,10 +639,13 @@ function NewReferralPage() {
                         <span className="block truncate text-xs font-medium text-foreground hover:text-primary">
                           {tpl.name}
                         </span>
-                        <span className="block truncate text-[10px] text-muted-foreground">
-                          {tpl.urgency === "URGENT" ? "🔴 Urgent" : tpl.urgency === "SEMI_URGENT" ? "🟡 Semi-urgent" : "🟢 Routine"}
-                          {tpl.diagnosis ? ` · ${tpl.diagnosis}` : ""}
-                          {tpl.use_count > 0 ? ` · used ${tpl.use_count}×` : ""}
+                        <span className="mt-0.5 flex items-center gap-1.5 flex-wrap">
+                          <UrgencyBadge urgency={tpl.urgency as "ROUTINE" | "SEMI_URGENT" | "URGENT"} />
+                          {(tpl.diagnosis || tpl.use_count > 0) && (
+                            <span className="text-[10px] text-muted-foreground">
+                              {tpl.diagnosis ? tpl.diagnosis : ""}{tpl.use_count > 0 ? ` · used ${tpl.use_count}×` : ""}
+                            </span>
+                          )}
                         </span>
                       </button>
                       <button

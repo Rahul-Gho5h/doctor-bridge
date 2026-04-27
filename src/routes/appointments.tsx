@@ -1,4 +1,4 @@
-﻿import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Calendar, Plus } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
@@ -139,7 +139,7 @@ function AppointmentsPage() {
 
 
       <Dialog open={apptDialogOpen} onOpenChange={setApptDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>New appointment</DialogTitle>
             <DialogDescription>Appointment scheduling is coming soon. For now, appointments are created via referral acceptances.</DialogDescription>

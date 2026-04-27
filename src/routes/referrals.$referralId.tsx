@@ -1,4 +1,4 @@
-﻿import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { z } from "zod";
 import { ArrowLeft, Check, X, Send, MessageSquare, ClipboardList, XCircle, Ban, Download, MessageCircleQuestion, CalendarClock, Bell, MessageSquareMore } from "lucide-react";
@@ -359,7 +359,7 @@ function ReferralDetailPage() {
 
         {/* Decline dialog */}
         <Dialog open={declineOpen} onOpenChange={setDeclineOpen}>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-lg">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <XCircle className="h-5 w-5 text-destructive" /> Decline referral
@@ -390,7 +390,7 @@ function ReferralDetailPage() {
 
         {/* Cancel dialog */}
         <Dialog open={cancelOpen} onOpenChange={setCancelOpen}>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-lg">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Ban className="h-5 w-5 text-destructive" /> Cancel referral

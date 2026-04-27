@@ -2,7 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
   Users, Send, Inbox, Clock, AlertTriangle, Activity,
-  CalendarClock, Bell, GraduationCap, MessageSquareMore, ArrowRight,
+  CalendarClock, Bell, GraduationCap, MessageSquareMore, ArrowRight, ArrowUpRight,
+  Sparkles, CheckCircle2, Lightbulb, AlertCircle, Info,
 } from "lucide-react";
 import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid,
@@ -15,6 +16,7 @@ import { UrgencyBadge } from "@/components/common/UrgencyBadge";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { relativeTime, formatDateTime } from "@/lib/format";
+import { getDashboardBriefingAI, type Insight } from "@/lib/aiInsights";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — Doctor Bridge" }] }),
@@ -62,6 +64,8 @@ function Dashboard() {
   const [recentEncounters, setRecentEncounters] = useState<{ id: string; title: string; type: string; occurred_at: string; global_patient_id: string }[]>([]);
   const [upcomingAppts, setUpcomingAppts] = useState<UpcomingAppt[]>([]);
   const [dueReminders, setDueReminders] = useState<DueReminder[]>([]);
+  const [briefing, setBriefing] = useState<Insight[]>([]);
+  const [briefingLoading, setBriefingLoading] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -240,6 +244,26 @@ function Dashboard() {
 
   const today = new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
+  // AI Briefing — fires once data has loaded, calls OpenAI with graceful fallback
+  useEffect(() => {
+    if (loading) return;
+    let cancelled = false;
+    setBriefingLoading(true);
+    getDashboardBriefingAI({
+      pendingForMe:         kpi.pendingForMe,
+      dueReminders:         dueReminders.length,
+      upcomingAppointments: kpi.upcomingAppointments,
+      openDiscussions:      kpi.openDiscussions,
+      encountersThisWeek:   kpi.encountersThisWeek,
+      referralsSent:        kpi.referralsSent,
+      referralsReceived:    kpi.referralsReceived,
+      recentUrgentCount:    recentReferrals.filter((r) => r.urgency === "URGENT").length,
+    }).then((result) => {
+      if (!cancelled) { setBriefing(result); setBriefingLoading(false); }
+    });
+    return () => { cancelled = true; };
+  }, [loading, kpi, dueReminders, recentReferrals]);
+
   if (loading) {
     return <DashboardLayout><DashboardSkeleton /></DashboardLayout>;
   }
@@ -311,20 +335,26 @@ function Dashboard() {
           )}
         </div>
 
+        {/* ── AI Briefing ──────────────────────────────────────────────────────── */}
+        {briefing.length > 0 && <AIBriefingCard insights={briefing} />}
+
         {/* ── KPI Metrics ─────────────────────────────────────────────────────── */}
         <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {kpiCards.map(({ label, value, icon: Icon, to, accent }) => (
             <Link
               key={label}
               to={to}
-              className="group flex h-[120px] flex-col justify-between rounded-xl border bg-card p-4 shadow-card transition-all hover:border-primary/30 hover:shadow-md"
+              className="group flex flex-col justify-between rounded-xl border bg-card p-4 shadow-card transition-all hover:border-primary/30 hover:shadow-elevated"
             >
-              <div className={`inline-flex h-9 w-9 items-center justify-center rounded-lg ${accent}`}>
-                <Icon className="h-4 w-4" />
+              <div className="flex items-start justify-between">
+                <div className={`inline-flex h-11 w-11 items-center justify-center rounded-xl ${accent} transition-transform duration-200 group-hover:scale-110`}>
+                  <Icon className="h-5 w-5" />
+                </div>
+                <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground/0 transition-all duration-200 group-hover:text-muted-foreground/50" />
               </div>
-              <div>
-                <div className="text-xl font-bold tracking-tight tabular-nums">{value}</div>
-                <div className="text-[11px] leading-tight text-muted-foreground">{label}</div>
+              <div className="mt-3">
+                <div className="text-2xl font-bold tracking-tight tabular-nums">{value}</div>
+                <div className="mt-0.5 text-xs leading-tight text-muted-foreground">{label}</div>
               </div>
             </Link>
           ))}
@@ -611,5 +641,46 @@ function Dashboard() {
     </ErrorBoundary>
   );
 }
+// ── AI Briefing card ─────────────────────────────────────────────────────────
 
+const BRIEF_CONFIG: Record<
+  Insight["level"],
+  { icon: React.ComponentType<{ className?: string }>; dot: string; label: string }
+> = {
+  alert:   { icon: AlertCircle,  dot: "bg-warning",         label: "text-warning-foreground" },
+  info:    { icon: Info,         dot: "bg-info-foreground",  label: "text-info-foreground" },
+  tip:     { icon: Lightbulb,    dot: "bg-primary",          label: "text-primary" },
+  success: { icon: CheckCircle2, dot: "bg-success-foreground",label: "text-success-foreground" },
+};
 
+function AIBriefingCard({ insights }: { insights: Insight[] }) {
+  return (
+    <div className="mb-6 overflow-hidden rounded-xl border bg-card shadow-card">
+      <div className="flex items-center gap-2 border-b px-5 py-3">
+        <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary/10">
+          <Sparkles className="h-3.5 w-3.5 text-primary" />
+        </div>
+        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">AI Briefing</span>
+        <span className="ml-auto text-[10px] text-muted-foreground hidden sm:block">
+          Suggestions only · always apply clinical judgement
+        </span>
+      </div>
+      <div className="divide-y">
+        {insights.map((ins, i) => {
+          const cfg = BRIEF_CONFIG[ins.level];
+          const Icon = cfg.icon;
+          return (
+            <div key={i} className="flex items-start gap-3 px-5 py-3.5">
+              <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${cfg.label}`} />
+              <div className="min-w-0">
+                <span className="text-sm font-medium text-foreground">{ins.title}</span>
+                {" "}
+                <span className="text-xs text-muted-foreground">{ins.body}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}

@@ -1,4 +1,4 @@
-﻿import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, useCallback } from "react";
 import { UserCog, UserPlus, Search, X } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
@@ -110,7 +110,7 @@ function StaffPage() {
             </thead>
             <tbody className="divide-y">
               {doctors.map((d) => (
-                <tr key={d.user_id} className="hover:bg-muted/30">
+                <tr key={d.user_id} className="hover:bg-muted/30 transition-colors">
                   <td className="px-4 py-3">
                     <div className="font-medium">{d.first_name} {d.last_name}</div>
                     <div className="text-xs text-muted-foreground">{d.email}</div>
@@ -161,7 +161,7 @@ function AddDoctorDialog({ onAdded }: { onAdded: () => void }) {
       <DialogTrigger asChild>
         <Button><UserPlus className="mr-2 h-4 w-4" />Add doctor</Button>
       </DialogTrigger>
-      <DialogContent className="max-w-xl">
+      <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>Add a doctor to {profile?.title ? "your hospital" : "your hospital"}</DialogTitle>
           <DialogDescription>

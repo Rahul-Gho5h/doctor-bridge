@@ -1,4 +1,4 @@
-﻿import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { Search, UserPlus, Users, ChevronDown, X } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
@@ -209,7 +209,7 @@ function PatientsPage() {
               </thead>
               <tbody className="divide-y">
                 {filteredRows.slice(0, displayCount).map((p) => (
-                  <tr key={p.id} className="hover:bg-muted/30">
+                  <tr key={p.id} className="hover:bg-muted/30 transition-colors">
                     <td className="px-4 py-3 font-mono text-xs">{p.display_id}</td>
                     <td className="px-4 py-3 font-medium">
                       {p.first_name} {p.last_name}
@@ -287,7 +287,7 @@ function RegisterPatientDialog({ onCreated }: { onCreated: () => void }) {
           <UserPlus className="mr-2 h-4 w-4" />Add patient
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-xl">
+      <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>Register a new patient</DialogTitle>
           <DialogDescription>Phone + DOB form a unique global identity. Existing patients will be matched automatically.</DialogDescription>

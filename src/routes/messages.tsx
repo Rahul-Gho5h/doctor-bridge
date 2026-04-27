@@ -1,4 +1,4 @@
-﻿import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { Send, MessageSquare, Search, Check, CheckCheck, ArrowRight, Plus } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
@@ -617,7 +617,7 @@ function NewConversationButton({
           <Plus className="mr-2 h-3.5 w-3.5" /> New conversation
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>Start a conversation</DialogTitle>
           <DialogDescription>

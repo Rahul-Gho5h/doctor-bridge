@@ -1,4 +1,4 @@
-﻿import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useState, useCallback } from "react";
 import {
   ArrowLeft, Stethoscope, Pill, FlaskConical, Activity, FileText, NotebookPen,
@@ -549,7 +549,7 @@ function PatientReferralsView({ patientMrn, patientId }: { patientMrn: string; p
         </thead>
         <tbody className="divide-y">
           {refs.map((r) => (
-            <tr key={r.id} className="hover:bg-muted/30">
+            <tr key={r.id} className="hover:bg-muted/30 transition-colors">
               <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{r.referral_number}</td>
               <td className="px-4 py-3 font-medium">{r.primary_diagnosis}</td>
               <td className="px-4 py-3 text-muted-foreground">{r.specialistName ?? "—"}</td>
@@ -623,7 +623,7 @@ function AuditLogView({ patientId }: { patientId: string }) {
         </thead>
         <tbody className="divide-y">
           {logs.map((l) => (
-            <tr key={l.id}>
+            <tr key={l.id} className="hover:bg-muted/30 transition-colors">
               <td className="px-4 py-2.5 text-xs text-muted-foreground">{formatDateTime(l.created_at)}</td>
               <td className="px-4 py-2.5 font-medium">{l.edited_by_name}</td>
               <td className="px-4 py-2.5">

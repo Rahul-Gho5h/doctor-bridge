@@ -150,7 +150,7 @@ function PortfolioDialog({ open, onOpenChange, editing, onSaved }: {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>{editing ? "Edit entry" : "Add portfolio entry"}</DialogTitle>
           <DialogDescription>This appears on your public profile shown to referring doctors.</DialogDescription>
