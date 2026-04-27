@@ -12,6 +12,7 @@ import { useEffect, useState } from "react";
 import {
   AlertCircle, Building2, CheckCircle2, Clock, Users,
 } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/common/PageHeader";
 import { supabase } from "@/integrations/supabase/client";
@@ -152,15 +153,19 @@ interface StatsData {
 
 function StatsRow({ stats, loading }: { stats: StatsData; loading: boolean }) {
   const items = [
-    { label: "Active doctors",       value: stats.activeDoctors,      icon: Users        },
-    { label: "On notice period",     value: stats.onNoticePeriod,     icon: Clock        },
-    { label: "Pending affiliations", value: stats.pendingAffiliations, icon: AlertCircle },
+    { label: "Active doctors",       value: stats.activeDoctors,       icon: Users,        to: "/admin/doctors"  as const },
+    { label: "On notice period",     value: stats.onNoticePeriod,      icon: Clock,        to: "/admin/doctors"  as const },
+    { label: "Pending affiliations", value: stats.pendingAffiliations, icon: AlertCircle,  to: "/affiliations"   as const },
   ];
 
   return (
     <div className="grid gap-4 sm:grid-cols-3">
-      {items.map(({ label, value, icon: Icon }) => (
-        <div key={label} className="rounded-xl border bg-card px-5 py-4 shadow-sm">
+      {items.map(({ label, value, icon: Icon, to }) => (
+        <Link
+          key={label}
+          to={to}
+          className="rounded-xl border bg-card px-5 py-4 shadow-sm transition-colors hover:bg-muted/40 hover:border-primary/30"
+        >
           <div className="flex items-center justify-between">
             <p className="text-sm text-muted-foreground">{label}</p>
             <Icon className="h-4 w-4 text-muted-foreground" />
@@ -168,7 +173,7 @@ function StatsRow({ stats, loading }: { stats: StatsData; loading: boolean }) {
           <p className={cn("mt-2 text-3xl font-bold tracking-tight", loading && "animate-pulse text-muted")}>
             {loading ? "—" : value}
           </p>
-        </div>
+        </Link>
       ))}
     </div>
   );

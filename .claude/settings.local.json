@@ -46,7 +46,9 @@
       "Read(//tmp/**)",
       "Bash(python3)",
       "Bash(node scripts/seed-hospitals.js)",
-      "Bash(node scripts/seed-patients.js)"
+      "Bash(node scripts/seed-patients.js)",
+      "PowerShell(Set-Location \"C:\\\\Users\\\\Rahul Ghosh\\\\Documents\\\\Agentica Company\\\\Products\\\\doctorlink-pro-main\\\\doctorlink-pro-main\"; Get-ChildItem src\\\\routes\\\\ | Where-Object { $_.Name -in @\\(\"emr.tsx\",\"billing.tsx\",\"inventory.tsx\",\"staff.tsx\",\"appointments.tsx\"\\) } | ForEach-Object { Write-Host \"=== $\\($_.Name\\) ===\" ; Get-Content $_.FullName | Measure-Object -Line | Select-Object -ExpandProperty Lines })",
+      "PowerShell(Set-Location \"C:\\\\Users\\\\Rahul Ghosh\\\\Documents\\\\Agentica Company\\\\Products\\\\doctorlink-pro-main\\\\doctorlink-pro-main\"; foreach \\($f in @\\(\"appointments.tsx\",\"emr.tsx\",\"staff.tsx\"\\)\\) { Write-Host \"`n=== $f ===\" ; Get-Content \"src\\\\routes\\\\$f\" | Select-Object -First 30 })"
     ]
   }
 }

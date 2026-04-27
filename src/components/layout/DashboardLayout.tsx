@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Users, Calendar, FileText, Search, Send, UserCircle,
   Receipt, UserCog, Package, BarChart3, Settings, LogOut, Menu, X,
   Building2, Inbox, MessageSquare, MessageSquareMore, ShieldAlert, ShieldCheck,
-  Stethoscope, LineChart, ClipboardList,
+  Stethoscope, LineChart, ClipboardList, GitMerge, CreditCard,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, type AppRole, type AccountType } from "@/hooks/useAuth";
@@ -24,6 +24,7 @@ interface NavItem {
   hideForRoles?: AppRole[];
   accountTypes?: AccountType[];
   hideForAccountTypes?: AccountType[];
+  search?: Record<string, string>;
 }
 
 interface NavSection { title: string; items: NavItem[] }
@@ -33,10 +34,10 @@ const SECTIONS: NavSection[] = [
     { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, hideForRoles: ["clinic_admin", "super_admin"] },
   ]},
   { title: "Referral Network", items: [
-    { to: "/doctors",     label: "Find Specialists",  icon: Search,            accountTypes: ["doctor", "hospital_admin"] },
-    { to: "/referrals",   label: "Referrals",         icon: Send,              accountTypes: ["doctor", "hospital_admin"] },
-    { to: "/discussions", label: "Case Discussions",  icon: MessageSquareMore, accountTypes: ["doctor"] },
-    { to: "/messages",    label: "Messages",          icon: MessageSquare,     accountTypes: ["doctor", "hospital_admin"] },
+    { to: "/doctors",     label: "Find Specialists",  icon: Search,            accountTypes: ["doctor", "hospital_admin"], hideForRoles: ["clinic_admin"] },
+    { to: "/referrals",   label: "Referrals",         icon: Send,              accountTypes: ["doctor", "hospital_admin"], hideForRoles: ["clinic_admin"] },
+    { to: "/discussions", label: "Case Discussions",  icon: MessageSquareMore, accountTypes: ["doctor"],                  hideForRoles: ["clinic_admin"] },
+    { to: "/messages",    label: "Messages",          icon: MessageSquare,     accountTypes: ["doctor", "hospital_admin"], hideForRoles: ["clinic_admin"] },
   ]},
   { title: "Clinical", items: [
     { to: "/patients", label: "Patients", icon: Users,    hideForAccountTypes: ["hospital_admin"], hideForRoles: ["clinic_admin", "super_admin"] },
@@ -50,23 +51,27 @@ const SECTIONS: NavSection[] = [
     { to: "/settings",     label: "Settings",     icon: Settings,   hideForAccountTypes: ["hospital_admin"], hideForRoles: ["clinic_admin", "super_admin"] },
   ]},
   { title: "Hospital", items: [
-    { to: "/hospital/doctors", label: "My Doctors",           icon: Users,     accountTypes: ["hospital_admin"] },
-    { to: "/affiliations",     label: "Affiliation Requests", icon: Inbox,     accountTypes: ["hospital_admin"] },
-    { to: "/settings",         label: "Hospital Profile",     icon: Building2, accountTypes: ["hospital_admin"] },
-    { to: "/analytics",        label: "Analytics",            icon: BarChart3, accountTypes: ["hospital_admin"] },
-    { to: "/appointments",     label: "Appointments",         icon: Calendar,  accountTypes: ["hospital_admin"] },
-    { to: "/billing",          label: "Billing",              icon: Receipt,   accountTypes: ["hospital_admin"] },
-    { to: "/staff",            label: "Staff",                icon: UserCog,   accountTypes: ["hospital_admin"] },
-    { to: "/inventory",        label: "Inventory",            icon: Package,   accountTypes: ["hospital_admin"] },
+    { to: "/hospital/doctors", label: "My Doctors",           icon: Users,     accountTypes: ["hospital_admin"], hideForRoles: ["clinic_admin"] },
+    { to: "/affiliations",     label: "Affiliation Requests", icon: Inbox,     accountTypes: ["hospital_admin"], hideForRoles: ["clinic_admin"] },
+    { to: "/settings",         label: "Hospital Profile",     icon: Building2, accountTypes: ["hospital_admin"], hideForRoles: ["clinic_admin"] },
+    { to: "/analytics",        label: "Analytics",            icon: BarChart3, accountTypes: ["hospital_admin"], hideForRoles: ["clinic_admin"] },
+    { to: "/appointments",     label: "Appointments",         icon: Calendar,  accountTypes: ["hospital_admin"], hideForRoles: ["clinic_admin"] },
+    { to: "/billing",          label: "Billing",              icon: Receipt,   accountTypes: ["hospital_admin"], hideForRoles: ["clinic_admin"] },
+    { to: "/staff",            label: "Staff",                icon: UserCog,   accountTypes: ["hospital_admin"], hideForRoles: ["clinic_admin"] },
+    { to: "/inventory",        label: "Inventory",            icon: Package,   accountTypes: ["hospital_admin"], hideForRoles: ["clinic_admin"] },
   ]},
-  { title: "Overview", items: [
-    { to: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["clinic_admin"] },
-    { to: "/admin/doctors",   label: "Doctors",   icon: Users,           roles: ["clinic_admin"] },
-    { to: "/patients",        label: "Patients",  icon: Users,           roles: ["clinic_admin"] },
+  // ── Clinic admin — HOSPITAL section ─────────────────────────────────────────
+  { title: "Hospital", items: [
+    { to: "/admin/dashboard", label: "Dashboard",            icon: LayoutDashboard, roles: ["clinic_admin"] },
+    { to: "/admin/doctors",   label: "My Doctors",           icon: Users,           roles: ["clinic_admin"] },
+    { to: "/affiliations",    label: "Affiliation Requests", icon: GitMerge,        roles: ["clinic_admin"] },
   ]},
-  { title: "Reports", items: [
-    { to: "/analytics", label: "Analytics", icon: BarChart3, roles: ["clinic_admin"] },
-    { to: "/settings",  label: "Settings",  icon: Settings,  roles: ["clinic_admin"] },
+  // ── Clinic admin — INSTITUTION section ────────────────────────────────────
+  { title: "Institution", items: [
+    { to: "/admin/analytics",          label: "Analytics",       icon: BarChart3,  roles: ["clinic_admin"] },
+    { to: "/settings",                 label: "Hospital Profile", icon: Building2,  roles: ["clinic_admin"], search: { tab: "institution" } },
+    { to: "/appointments",             label: "Appointments",    icon: Calendar,   roles: ["clinic_admin"] },
+    { to: "/billing",                  label: "Billing",         icon: CreditCard, roles: ["clinic_admin"] },
   ]},
   { title: "Platform Admin", items: [
     { to: "/platform",              label: "Overview",     icon: ShieldCheck,   roles: ["super_admin"] },
@@ -172,6 +177,7 @@ const PAGE_CONTEXT: Record<string, string> = {
   "/hospital/doctors":    "Your affiliated doctors",
   "/admin/dashboard":     "Clinic administration overview",
   "/admin/doctors":       "Manage clinic doctors",
+  "/admin/analytics":     "Institution analytics and performance",
   "/platform":            "Internal platform administration",
   "/platform/doctors":    "Doctor registry",
   "/platform/institutions": "Institution registry",
@@ -222,8 +228,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
   // Role guard — clinic_admin
   const CLINIC_ADMIN_BLOCKED = [
-    "/referrals", "/emr", "/cme", "/appointments",
+    "/referrals", "/emr", "/cme",
     "/availability", "/discussions", "/messages", "/doctors", "/dashboard",
+    "/patients", "/profile", "/staff", "/inventory", "/analytics",
   ];
   useEffect(() => {
     if (loading || !isClinicAdmin) return;
@@ -312,7 +319,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 <ul className="space-y-0.5">
                   {items.map((item) => {
                     const Icon = item.icon;
-                    const EXACT_ROUTES = ["/platform", "/dashboard", "/admin/dashboard"];
+                    const EXACT_ROUTES = ["/platform", "/dashboard", "/admin/dashboard", "/admin/analytics"];
                     const active = EXACT_ROUTES.includes(item.to)
                       ? pathname === item.to
                       : pathname.startsWith(item.to);
@@ -320,6 +327,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                       <li key={item.to + item.label}>
                         <Link
                           to={item.to}
+                          {...(item.search ? { search: item.search as any } : {})}
                           className={cn(
                             "flex items-center gap-2.5 rounded-md py-1.5 pr-2.5 text-[13px] font-medium transition-all duration-150",
                             active

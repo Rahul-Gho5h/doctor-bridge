@@ -51,6 +51,7 @@ import { Route as HospitalDoctorsRouteImport } from './routes/hospital.doctors'
 import { Route as DoctorsDoctorIdRouteImport } from './routes/doctors.$doctorId'
 import { Route as AdminDoctorsRouteImport } from './routes/admin.doctors'
 import { Route as AdminDashboardRouteImport } from './routes/admin.dashboard'
+import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
 
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
   id: '/verify-email',
@@ -262,6 +263,11 @@ const AdminDashboardRoute = AdminDashboardRouteImport.update({
   path: '/admin/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
+  id: '/admin/analytics',
+  path: '/admin/analytics',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -290,6 +296,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/staff': typeof StaffRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/doctors': typeof AdminDoctorsRoute
   '/doctors/$doctorId': typeof DoctorsDoctorIdRoute
@@ -330,6 +337,7 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/staff': typeof StaffRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/doctors': typeof AdminDoctorsRoute
   '/doctors/$doctorId': typeof DoctorsDoctorIdRoute
@@ -375,6 +383,7 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/staff': typeof StaffRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/doctors': typeof AdminDoctorsRoute
   '/doctors/$doctorId': typeof DoctorsDoctorIdRoute
@@ -421,6 +430,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/staff'
     | '/verify-email'
+    | '/admin/analytics'
     | '/admin/dashboard'
     | '/admin/doctors'
     | '/doctors/$doctorId'
@@ -461,6 +471,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/staff'
     | '/verify-email'
+    | '/admin/analytics'
     | '/admin/dashboard'
     | '/admin/doctors'
     | '/doctors/$doctorId'
@@ -505,6 +516,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/staff'
     | '/verify-email'
+    | '/admin/analytics'
     | '/admin/dashboard'
     | '/admin/doctors'
     | '/doctors/$doctorId'
@@ -550,6 +562,7 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRoute
   StaffRoute: typeof StaffRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
+  AdminAnalyticsRoute: typeof AdminAnalyticsRoute
   AdminDashboardRoute: typeof AdminDashboardRoute
   AdminDoctorsRoute: typeof AdminDoctorsRoute
   HospitalDoctorsRoute: typeof HospitalDoctorsRoute
@@ -852,6 +865,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/analytics': {
+      id: '/admin/analytics'
+      path: '/admin/analytics'
+      fullPath: '/admin/analytics'
+      preLoaderRoute: typeof AdminAnalyticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -945,6 +965,7 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRoute,
   StaffRoute: StaffRoute,
   VerifyEmailRoute: VerifyEmailRoute,
+  AdminAnalyticsRoute: AdminAnalyticsRoute,
   AdminDashboardRoute: AdminDashboardRoute,
   AdminDoctorsRoute: AdminDoctorsRoute,
   HospitalDoctorsRoute: HospitalDoctorsRoute,
