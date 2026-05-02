@@ -171,22 +171,24 @@ function Dashboard() {
           .from("case_discussion_participants")
           .select("discussion_id")
           .eq("user_id", user.id);
-        const ids = (partOf ?? []).map((p: any) => p.discussion_id);
-        if (ids.length > 0) {
-          const { count: dc } = await supabase
-            .from("case_discussions")
-            .select("id", { count: "exact", head: true })
-            .in("id", ids)
-            .eq("status", "OPEN");
-          openDisc = dc ?? 0;
-        }
-        // Also count ones I created
-        const { count: dcOwn } = await supabase
+        const participantIds = (partOf ?? []).map((p: any) => p.discussion_id as string);
+
+        // Build an OR filter: discussions I created OR I'm a participant in
+        let discQuery = supabase
           .from("case_discussions")
           .select("id", { count: "exact", head: true })
-          .eq("created_by", user.id)
           .eq("status", "OPEN");
-        openDisc = Math.max(openDisc, dcOwn ?? 0);
+
+        if (participantIds.length > 0) {
+          discQuery = discQuery.or(
+            `created_by.eq.${user.id},id.in.(${participantIds.join(",")})`
+          );
+        } else {
+          discQuery = discQuery.eq("created_by", user.id);
+        }
+
+        const { count: dc } = await discQuery;
+        openDisc = dc ?? 0;
       }
 
       // Due reminders (next 24 hours, not yet fired)
