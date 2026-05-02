@@ -1,4 +1,4 @@
-﻿import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState, useEffect, KeyboardEvent } from "react";
 import {
   CheckCircle2, Shield, Smartphone, Fingerprint, ShieldCheck,
@@ -420,12 +420,14 @@ function VerifyStep({ docId, doctorName, nmcNumber, onBack, onNext }: {
               description="OTP sent to your Aadhaar-linked mobile number via UIDAI. Your Aadhaar number is never stored."
               onClick={() => setMethod("aadhaar")}
             />
-            <MethodCard
-              icon={Zap}
-              title="Instant verify"
-              description="Skip OTP for demo — marks your identity as verified immediately."
-              onClick={() => setMethod("instant")}
-            />
+            {import.meta.env.DEV && (
+              <MethodCard
+                icon={Zap}
+                title="Instant verify"
+                description="Skip OTP for demo — marks your identity as verified immediately."
+                onClick={() => setMethod("instant")}
+              />
+            )}
           </div>
         )}
 
