@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
   Users, Send, Inbox, Clock, AlertTriangle, Activity,
@@ -55,6 +55,13 @@ interface DueReminder {
 function Dashboard() {
   const { profile, user } = useAuth();
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.navigate({ to: "/login" });
+    }
+  }, [loading, user, router]);
   const [kpi, setKpi] = useState<KPI>({
     patients: 0, encountersThisWeek: 0, referralsSent: 0, referralsReceived: 0,
     pendingForMe: 0, upcomingAppointments: 0, cmeThisYear: 0, openDiscussions: 0,

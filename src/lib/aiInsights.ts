@@ -19,46 +19,26 @@ export interface Insight {
 
 // ── OpenAI caller ─────────────────────────────────────────────────────────────
 
+import { supabase } from "@/integrations/supabase/client";
+
 async function callOpenAI(userPrompt: string): Promise<Insight[]> {
-  const key =
-    (import.meta as any).env?.VITE_OPENAI_API_KEY ??
-    (import.meta as any).env?.OPENAI_API_KEY;
-
-  if (!key) return [];
-
   try {
-    const res = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${key}`,
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        response_format: { type: "json_object" },
-        temperature: 0.4,
-        max_tokens: 700,
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are a clinical practice AI assistant for Doctor Bridge, a referral management platform. " +
-              "Your role is to provide SUGGESTIONS, SUMMARIES, and NEXT-STEP NUDGES only — " +
-              "you NEVER override, replace, or contradict a doctor's clinical judgement or patient-care instructions. " +
-              "Respond strictly with JSON in this format: " +
-              '{ "insights": [{ "level": "info"|"tip"|"alert"|"success", "title": "string", "body": "string" }] } ' +
-              "Maximum 4 items. Each body is 1-2 sentences. Be specific and actionable.",
-          },
-          { role: "user", content: userPrompt },
-        ],
-      }),
+    const { data, error } = await supabase.functions.invoke("ai-insights", {
+      body: { prompt: userPrompt }
     });
 
-    if (!res.ok) return [];
+    if (error || !data) return [];
 
-    const json = await res.json();
-    const text: string = json?.choices?.[0]?.message?.content ?? "{}";
-    const parsed = JSON.parse(text);
+    const text: string = data?.choices?.[0]?.message?.content ?? "{}";
+    
+    let parsed;
+    try {
+      const clean = text.replace(/```json|```/g, "").trim();
+      parsed = JSON.parse(clean);
+    } catch {
+      parsed = JSON.parse(text);
+    }
+    
     const items: Insight[] = parsed?.insights ?? [];
     return items
       .filter(
@@ -69,7 +49,8 @@ async function callOpenAI(userPrompt: string): Promise<Insight[]> {
           i.body,
       )
       .slice(0, 4);
-  } catch {
+  } catch (err) {
+    console.error("Failed to fetch AI insights:", err);
     return [];
   }
 }
