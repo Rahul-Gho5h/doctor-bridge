@@ -1,7 +1,7 @@
 import { Outlet, createRootRouteWithContext, HeadContent, Scripts } from "@tanstack/react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/sonner";
-import { AuthProvider } from "@/hooks/useAuth";
+import { AuthProvider } from "@/hooks/AuthContext";
 import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 import appCss from "../styles.css?url";
 
