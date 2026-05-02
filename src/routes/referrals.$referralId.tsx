@@ -244,7 +244,7 @@ function ReferralDetailPage() {
 
   const cancel = async () => {
     setCancelling(true);
-    const ok = await updateStatus({ status: "CANCELLED", cancelled_at: new Date().toISOString() });
+    const ok = await updateStatus({ status: "CANCELLED" });
     setCancelling(false);
     setCancelOpen(false);
     if (ok) {
