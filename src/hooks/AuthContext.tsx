@@ -75,12 +75,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loadExtras(session?.user ?? null);
     });
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!mounted) return;
-      setState((s) => ({ ...s, session, user: session?.user ?? null, loading: true }));
-      loadExtras(session?.user ?? null);
-    });
-
     return () => {
       mounted = false;
       subscription.unsubscribe();
