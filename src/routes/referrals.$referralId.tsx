@@ -144,33 +144,37 @@ function ReferralDetailPage() {
   const latestTsRef = useRef<string | null>(null);
 
   const pollMessages = useCallback(async () => {
-    const since = latestTsRef.current;
-    const query = supabase
-      .from("referral_messages")
-      .select("*")
-      .eq("referral_id", referralId)
-      .order("created_at");
-    if (since) query.gt("created_at", since);
-    const { data } = await query;
-    if (!data || data.length === 0) return;
-    setMessages((prev) => {
-      let next = [...prev];
-      for (const msg of data as MessageRow[]) {
-        // Replace matching optimistic row, or append if new
-        const optIdx = next.findIndex(
-          (m) => m.id.startsWith("opt-") && m.sender_id === msg.sender_id && m.message === msg.message
-        );
-        if (optIdx !== -1) {
-          next[optIdx] = msg;
-        } else if (!next.some((m) => m.id === msg.id)) {
-          next = [...next, msg];
+    try {
+      const since = latestTsRef.current;
+      const query = supabase
+        .from("referral_messages")
+        .select("*")
+        .eq("referral_id", referralId)
+        .order("created_at");
+      if (since) query.gt("created_at", since);
+      const { data } = await query;
+      if (!data || data.length === 0) return;
+      setMessages((prev) => {
+        let next = [...prev];
+        for (const msg of data as MessageRow[]) {
+          // Replace matching optimistic row, or append if new
+          const optIdx = next.findIndex(
+            (m) => m.id.startsWith("opt-") && m.sender_id === msg.sender_id && m.message === msg.message
+          );
+          if (optIdx !== -1) {
+            next[optIdx] = msg;
+          } else if (!next.some((m) => m.id === msg.id)) {
+            next = [...next, msg];
+          }
         }
-      }
-      return next;
-    });
-    // Advance the cursor to the latest received timestamp
-    const last = (data as MessageRow[]).at(-1);
-    if (last) latestTsRef.current = last.created_at;
+        return next;
+      });
+      // Advance the cursor to the latest received timestamp
+      const last = (data as MessageRow[]).at(-1);
+      if (last) latestTsRef.current = last.created_at;
+    } catch (err) {
+      console.error("[pollMessages] error:", err);
+    }
   }, [referralId]);
 
   useEffect(() => {
