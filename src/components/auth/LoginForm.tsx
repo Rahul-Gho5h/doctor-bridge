@@ -43,7 +43,7 @@ export function LoginForm() {
       // Fetch roles and account_type in parallel
       const [{ data: roleRows }, { data: profileData }] = await Promise.all([
         supabase.from("user_roles").select("role").eq("user_id", data.user.id),
-        supabase.from("profiles").select("account_type").eq("id", data.user.id).maybeSingle(),
+        supabase.from("profiles").select("account_type, clinic_id, clinics(verification_status)").eq("id", data.user.id).maybeSingle(),
       ]);
       const roles = (roleRows ?? []).map((r) => r.role as string);
 
@@ -55,6 +55,16 @@ export function LoginForm() {
 
       // clinic_admin → dedicated admin dashboard
       if (roles.includes("clinic_admin")) {
+        const status = (profileData as any)?.clinics?.verification_status;
+        if (status !== "APPROVED") {
+          await supabase.auth.signOut();
+          toast.error(
+            status === "DECLINED" 
+              ? "Your hospital account application was declined. Please check your email for the reason."
+              : "Your hospital account is pending approval by the Doctor Bridge administration."
+          );
+          return;
+        }
         router.navigate({ to: "/admin/dashboard" });
         return;
       }

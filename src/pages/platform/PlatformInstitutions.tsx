@@ -93,9 +93,34 @@ function MetaField({ label, value, mono = false }: { label: string; value: strin
 // Inline detail panel
 // ---------------------------------------------------------------------------
 
-function InstitutionDetail({ clinic }: { clinic: ClinicFull }) {
+function InstitutionDetail({ clinic, onUpdate }: { clinic: ClinicFull; onUpdate: () => void }) {
   const equipment = Array.isArray(clinic.equipment) ? clinic.equipment as string[] : [];
   const isImageUrl = (url: string) => /\.(png|jpg|jpeg|gif|webp|svg)(\?|$)/i.test(url) || url.startsWith("data:image");
+  const [updating, setUpdating] = useState(false);
+  const [declineReason, setDeclineReason] = useState("");
+
+  const handleUpdate = async (status: "ACTIVE" | "DECLINED") => {
+    if (status === "DECLINED" && !declineReason) {
+      toast.error("Please provide a reason for declining.");
+      return;
+    }
+    setUpdating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-approve-clinic", {
+        body: { clinicId: clinic.id, status, reason: declineReason }
+      });
+      if (error) throw new Error(error.message);
+      if (data?.error) throw new Error(data.error);
+      
+      toast.success(`Institution ${status === "ACTIVE" ? "approved" : "declined"} successfully. Email sent.`);
+      setDeclineReason("");
+      onUpdate();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update institution status.");
+    } finally {
+      setUpdating(false);
+    }
+  };
 
   return (
     <div className="border-t bg-muted/20 px-6 py-6">
@@ -252,6 +277,40 @@ function InstitutionDetail({ clinic }: { clinic: ClinicFull }) {
           </p>
         </div>
       </div>
+
+      {clinic.verification_status === "PENDING" && (
+        <div className="mt-8 border-t border-border/50 pt-6">
+          <h4 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">
+            <CheckCircle2 className="h-3.5 w-3.5" /> Administrative Actions
+          </h4>
+          <div className="flex flex-col gap-4 max-w-lg">
+            <div className="flex gap-3">
+              <Button 
+                className="w-full bg-green-600 hover:bg-green-700 text-white" 
+                onClick={() => handleUpdate("ACTIVE")}
+                disabled={updating}
+              >
+                {updating ? "Processing..." : "Approve Institution"}
+              </Button>
+            </div>
+            <div className="flex gap-3">
+              <Input 
+                placeholder="Reason for declining..." 
+                value={declineReason} 
+                onChange={(e) => setDeclineReason(e.target.value)}
+                disabled={updating}
+              />
+              <Button 
+                variant="destructive" 
+                onClick={() => handleUpdate("DECLINED")}
+                disabled={updating}
+              >
+                Decline
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

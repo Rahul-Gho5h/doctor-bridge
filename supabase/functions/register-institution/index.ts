@@ -224,6 +224,32 @@ Deno.serve(async (req) => {
 
     console.log(`register-institution: clinic_admin role granted to ${userId}`);
 
+    // ── Send Email ────────────────────────────────────────────────────────────
+    const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    if (resendApiKey) {
+      try {
+        await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${resendApiKey}`
+          },
+          body: JSON.stringify({
+            from: "Doctor Bridge <admin@doctorbridge.in>",
+            to: [adminEmail],
+            subject: "Application Received - Doctor Bridge",
+            html: `<h3>Hello ${firstName},</h3>
+                   <p>We have successfully received the onboarding application for <strong>${institutionName}</strong>.</p>
+                   <p>Our administration team is currently reviewing your application and verifying your documents. You will receive an email once the verification is complete.</p>
+                   <br/>
+                   <p>Thank you,<br/>The Doctor Bridge Team</p>`,
+          })
+        });
+      } catch (e) {
+        console.error("Failed to send welcome email", e);
+      }
+    }
+
     // ── Success ───────────────────────────────────────────────────────────────
     return json({ success: true, clinicId, userId });
 
