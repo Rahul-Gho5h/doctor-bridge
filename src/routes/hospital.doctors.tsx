@@ -366,7 +366,7 @@ function CreateDoctorDialog({ onCreated }: { onCreated: () => void }) {
     nmcNumber: "", specialization: ""
   });
 
-  const { session } = useAuth();
+  const { session, profile } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -374,18 +374,25 @@ function CreateDoctorDialog({ onCreated }: { onCreated: () => void }) {
 
     try {
       if (!session) throw new Error("Not authenticated");
+      if (!profile?.clinic_id) throw new Error("No clinic associated with your profile");
 
-      const res = await fetch("https://zvfvhndcbwfdcfessycn.supabase.co/functions/v1/admin-create-doctor", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${session.access_token}`
-        },
-        body: JSON.stringify(form)
+      const payload = {
+        email: form.email,
+        tempPassword: form.password,
+        firstName: form.firstName,
+        lastName: form.lastName,
+        nmcNumber: form.nmcNumber,
+        qualifications: form.specialization ? [form.specialization] : [],
+        clinicId: profile.clinic_id,
+        userId: "DR-" + Math.floor(1000 + Math.random() * 9000).toString(),
+      };
+
+      const { data, error } = await supabase.functions.invoke("admin-create-doctor", {
+        body: payload
       });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to create doctor");
+      if (error) throw new Error(error.message || "Failed to create doctor");
+      if (data?.error) throw new Error(data.error);
 
       setOpen(false);
       setForm({ firstName: "", lastName: "", email: "", password: "", nmcNumber: "", specialization: "" });
