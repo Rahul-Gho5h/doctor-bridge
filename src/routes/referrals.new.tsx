@@ -96,8 +96,7 @@ function NewReferralPage() {
   useEffect(() => {
     if (!user) return;
     (async () => {
-      const { data: pts, error: ptsErr } = await supabase.rpc("search_global_patients", { _q: "" });
-      console.log("search_global_patients result:", pts, ptsErr);
+      const { data: pts } = await supabase.rpc("search_global_patients", { _q: "" });
       if (pts) setPatients(pts as PatientLite[]);
     })();
   }, [user]);
