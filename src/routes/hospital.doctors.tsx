@@ -73,14 +73,37 @@ function HospitalDoctorsPage() {
     const doctorProfileIds = affiliations.map(a => a.doctor_profile_id);
     const userIds = affiliations.map(a => a.doctor_user_id);
 
-    // Fetch doctor profiles and general profiles
+    const idList = doctorProfileIds.join(",");
+
     const [
       { data: docProfiles },
-      { data: userProfiles }
+      { data: userProfiles },
+      { data: referralRows },
+      { data: patientRows },
     ] = await Promise.all([
       supabase.from("doctor_profiles").select("id, nmc_number, is_public").in("id", doctorProfileIds),
-      supabase.from("profiles").select("id, first_name, last_name, email, specialization").in("id", userIds)
+      supabase.from("profiles").select("id, first_name, last_name, email, specialization").in("id", userIds),
+      supabase.from("referrals").select("referring_doctor_id, specialist_id")
+        .or(`referring_doctor_id.in.(${idList}),specialist_id.in.(${idList})`),
+      supabase.from("patient_access_grants").select("doctor_user_id, global_patient_id")
+        .in("doctor_user_id", userIds),
     ]);
+
+    // Count referrals per doctor_profile_id (as referrer or specialist)
+    const referralCountMap = new Map<string, number>();
+    for (const row of referralRows ?? []) {
+      if (doctorProfileIds.includes(row.referring_doctor_id))
+        referralCountMap.set(row.referring_doctor_id, (referralCountMap.get(row.referring_doctor_id) ?? 0) + 1);
+      if (doctorProfileIds.includes(row.specialist_id))
+        referralCountMap.set(row.specialist_id, (referralCountMap.get(row.specialist_id) ?? 0) + 1);
+    }
+
+    // Count unique patients per doctor_user_id
+    const patientSetMap = new Map<string, Set<string>>();
+    for (const row of patientRows ?? []) {
+      if (!patientSetMap.has(row.doctor_user_id)) patientSetMap.set(row.doctor_user_id, new Set());
+      patientSetMap.get(row.doctor_user_id)!.add(row.global_patient_id);
+    }
 
     const dpMap = new Map((docProfiles || []).map(dp => [dp.id, dp]));
     const upMap = new Map((userProfiles || []).map(up => [up.id, up]));
@@ -97,8 +120,8 @@ function HospitalDoctorsPage() {
         name: up ? `${up.first_name} ${up.last_name}` : "Unknown",
         email: up?.email || "",
         specialization: up?.specialization || "General",
-        patient_count: 0, // Mock for now, would aggregate in real scenario
-        referral_count: 0, // Mock for now
+        patient_count: patientSetMap.get(aff.doctor_user_id)?.size ?? 0,
+        referral_count: referralCountMap.get(aff.doctor_profile_id) ?? 0,
         joined_at: aff.updated_at ?? ""
       };
     });
@@ -159,22 +182,30 @@ function HospitalDoctorsPage() {
         ) : (
           <div className="divide-y">
             <div className="grid grid-cols-12 gap-4 px-6 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              <div className="col-span-4">Doctor</div>
-              <div className="col-span-3">Specialty</div>
+              <div className="col-span-3">Doctor</div>
+              <div className="col-span-2">Specialty</div>
+              <div className="col-span-1 text-right">Patients</div>
+              <div className="col-span-1 text-right">Referrals</div>
               <div className="col-span-2">NMC</div>
               <div className="col-span-2">Status</div>
               <div className="col-span-1 text-right">Actions</div>
             </div>
             {doctors.map(doc => (
               <div key={doc.id} className="grid grid-cols-12 items-center gap-4 px-6 py-4 text-sm transition-colors hover:bg-muted/30">
-                <div className="col-span-4 cursor-pointer" onClick={() => setSelectedDoctor(doc)}>
+                <div className="col-span-3 cursor-pointer" onClick={() => setSelectedDoctor(doc)}>
                   <div className="font-medium text-foreground">Dr. {doc.name}</div>
                   <div className="text-xs text-muted-foreground">{doc.email}</div>
                 </div>
-                <div className="col-span-3 cursor-pointer" onClick={() => setSelectedDoctor(doc)}>
+                <div className="col-span-2 cursor-pointer" onClick={() => setSelectedDoctor(doc)}>
                   <span className="inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
                     {doc.specialization}
                   </span>
+                </div>
+                <div className="col-span-1 text-right font-semibold cursor-pointer" onClick={() => setSelectedDoctor(doc)}>
+                  {doc.patient_count}
+                </div>
+                <div className="col-span-1 text-right font-semibold cursor-pointer" onClick={() => setSelectedDoctor(doc)}>
+                  {doc.referral_count}
                 </div>
                 <div className="col-span-2 font-mono text-xs cursor-pointer" onClick={() => setSelectedDoctor(doc)}>
                   {doc.nmc_number}
@@ -309,11 +340,20 @@ function HospitalDoctorsPage() {
                   </TabsContent>
                   
                   <TabsContent value="analytics" className="mt-6">
-                    <EmptyState
-                      icon={Activity}
-                      title="No analytics data"
-                      description="Metrics will appear once the doctor starts handling referrals and encounters."
-                    />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="rounded-xl border bg-card p-4 text-center">
+                        <div className="text-3xl font-bold text-primary">{selectedDoctor.patient_count}</div>
+                        <div className="mt-1 text-xs text-muted-foreground flex items-center justify-center gap-1">
+                          <Users className="h-3 w-3" /> Patients
+                        </div>
+                      </div>
+                      <div className="rounded-xl border bg-card p-4 text-center">
+                        <div className="text-3xl font-bold text-primary">{selectedDoctor.referral_count}</div>
+                        <div className="mt-1 text-xs text-muted-foreground flex items-center justify-center gap-1">
+                          <FileText className="h-3 w-3" /> Referrals
+                        </div>
+                      </div>
+                    </div>
                   </TabsContent>
                   
                   <TabsContent value="cme" className="mt-6">
