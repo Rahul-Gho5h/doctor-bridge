@@ -22,14 +22,19 @@ interface Notification {
 
 function resolveLink(n: Notification): string | null {
   const d = n.data ?? {};
+  const rid = d.referral_id as string | undefined;
+  const did = d.discussion_id as string | undefined;
   switch (n.type) {
     case "NEW_REFERRAL":
     case "REFERRAL_ACCEPTED":
     case "REFERRAL_DECLINED":
-    case "REFERRAL_MESSAGE": {
-      const rid = d.referral_id as string | undefined;
+    case "REFERRAL_MESSAGE":
+    case "APPOINTMENT_SCHEDULED":
+    case "FOLLOW_UP_REMINDER":
       return rid ? `/referrals/${rid}` : "/referrals";
-    }
+    case "CASE_DISCUSSION_MESSAGE":
+    case "CASE_DISCUSSION_INVITE":
+      return did ? `/discussions?id=${did}` : "/discussions";
     case "MESSAGE": {
       const tid = d.thread_id as string | undefined;
       return tid ? `/messages?thread=${tid}` : "/messages";
@@ -44,14 +49,18 @@ function resolveLink(n: Notification): string | null {
 
 function typeIcon(type: string): string {
   switch (type) {
-    case "NEW_REFERRAL": return "📋";
-    case "REFERRAL_ACCEPTED": return "✅";
-    case "REFERRAL_DECLINED": return "❌";
-    case "REFERRAL_MESSAGE": return "💬";
-    case "MESSAGE": return "✉️";
+    case "NEW_REFERRAL":           return "📋";
+    case "REFERRAL_ACCEPTED":      return "✅";
+    case "REFERRAL_DECLINED":      return "❌";
+    case "REFERRAL_MESSAGE":       return "💬";
+    case "APPOINTMENT_SCHEDULED":  return "📅";
+    case "FOLLOW_UP_REMINDER":     return "⏰";
+    case "CASE_DISCUSSION_MESSAGE":
+    case "CASE_DISCUSSION_INVITE": return "🗂️";
+    case "MESSAGE":                return "✉️";
     case "AFFILIATION_REQUEST":
-    case "AFFILIATION_ACCEPTED": return "🏥";
-    default: return "🔔";
+    case "AFFILIATION_ACCEPTED":   return "🏥";
+    default:                       return "🔔";
   }
 }
 
