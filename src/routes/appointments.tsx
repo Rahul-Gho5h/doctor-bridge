@@ -506,7 +506,7 @@ function CreateApptDialog({
             </Select>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             {/* Date & time */}
             <div className="space-y-2">
               <Label>Date & time *</Label>

@@ -478,7 +478,7 @@ function AvailabilityPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-1">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label className="text-xs">Start Date *</Label>
                 <Input type="date" value={leaveDate} onChange={(e) => setLeaveDate(e.target.value)} min={today} />
