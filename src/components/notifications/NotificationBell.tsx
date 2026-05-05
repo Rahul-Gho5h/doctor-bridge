@@ -195,7 +195,16 @@ export function NotificationBell() {
           )}
         </div>
 
-        <div className="border-t px-4 py-2 text-center">
+        <div className="border-t px-4 py-2 flex items-center justify-between">
+          <button
+            onClick={() => {
+              setOpen(false);
+              router.navigate({ to: "/notifications" as any });
+            }}
+            className="text-xs font-medium text-primary hover:underline"
+          >
+            View all notifications
+          </button>
           <button
             onClick={() => {
               setOpen(false);
@@ -203,7 +212,7 @@ export function NotificationBell() {
             }}
             className="text-xs text-muted-foreground hover:text-foreground hover:underline"
           >
-            Notification settings
+            Settings
           </button>
         </div>
       </DropdownMenuContent>

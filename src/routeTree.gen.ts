@@ -19,6 +19,7 @@ import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as PlatformRouteImport } from './routes/platform'
 import { Route as PatientsRouteImport } from './routes/patients'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as MessagesRouteImport } from './routes/messages'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as InventoryRouteImport } from './routes/inventory'
@@ -101,6 +102,11 @@ const PatientsRoute = PatientsRouteImport.update({
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotificationsRoute = NotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MessagesRoute = MessagesRouteImport.update({
@@ -286,6 +292,7 @@ export interface FileRoutesByFullPath {
   '/inventory': typeof InventoryRoute
   '/login': typeof LoginRoute
   '/messages': typeof MessagesRoute
+  '/notifications': typeof NotificationsRoute
   '/onboarding': typeof OnboardingRoute
   '/patients': typeof PatientsRouteWithChildren
   '/platform': typeof PlatformRouteWithChildren
@@ -330,6 +337,7 @@ export interface FileRoutesByTo {
   '/inventory': typeof InventoryRoute
   '/login': typeof LoginRoute
   '/messages': typeof MessagesRoute
+  '/notifications': typeof NotificationsRoute
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
@@ -373,6 +381,7 @@ export interface FileRoutesById {
   '/inventory': typeof InventoryRoute
   '/login': typeof LoginRoute
   '/messages': typeof MessagesRoute
+  '/notifications': typeof NotificationsRoute
   '/onboarding': typeof OnboardingRoute
   '/patients': typeof PatientsRouteWithChildren
   '/platform': typeof PlatformRouteWithChildren
@@ -420,6 +429,7 @@ export interface FileRouteTypes {
     | '/inventory'
     | '/login'
     | '/messages'
+    | '/notifications'
     | '/onboarding'
     | '/patients'
     | '/platform'
@@ -464,6 +474,7 @@ export interface FileRouteTypes {
     | '/inventory'
     | '/login'
     | '/messages'
+    | '/notifications'
     | '/onboarding'
     | '/profile'
     | '/register'
@@ -506,6 +517,7 @@ export interface FileRouteTypes {
     | '/inventory'
     | '/login'
     | '/messages'
+    | '/notifications'
     | '/onboarding'
     | '/patients'
     | '/platform'
@@ -552,6 +564,7 @@ export interface RootRouteChildren {
   InventoryRoute: typeof InventoryRoute
   LoginRoute: typeof LoginRoute
   MessagesRoute: typeof MessagesRoute
+  NotificationsRoute: typeof NotificationsRoute
   OnboardingRoute: typeof OnboardingRoute
   PatientsRoute: typeof PatientsRouteWithChildren
   PlatformRoute: typeof PlatformRouteWithChildren
@@ -639,6 +652,13 @@ declare module '@tanstack/react-router' {
       path: '/onboarding'
       fullPath: '/onboarding'
       preLoaderRoute: typeof OnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notifications': {
+      id: '/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof NotificationsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/messages': {
@@ -955,6 +975,7 @@ const rootRouteChildren: RootRouteChildren = {
   InventoryRoute: InventoryRoute,
   LoginRoute: LoginRoute,
   MessagesRoute: MessagesRoute,
+  NotificationsRoute: NotificationsRoute,
   OnboardingRoute: OnboardingRoute,
   PatientsRoute: PatientsRouteWithChildren,
   PlatformRoute: PlatformRouteWithChildren,

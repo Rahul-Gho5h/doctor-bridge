@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import {
   LayoutDashboard, Users, Calendar, FileText, Search, Send, UserCircle,
   Receipt, UserCog, Package, BarChart3, Settings, LogOut, Menu, X,
-  Building2, Inbox, MessageSquare, MessageSquareMore, ShieldAlert, ShieldCheck,
+  Building2, Inbox, Bell, MessageSquare, MessageSquareMore, ShieldAlert, ShieldCheck,
   Stethoscope, LineChart, ClipboardList, GitMerge, CreditCard,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,7 +31,8 @@ interface NavSection { title: string; items: NavItem[] }
 
 const SECTIONS: NavSection[] = [
   { title: "Overview", items: [
-    { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, hideForRoles: ["clinic_admin", "super_admin"] },
+    { to: "/dashboard",     label: "Dashboard",     icon: LayoutDashboard, hideForRoles: ["clinic_admin", "super_admin"] },
+    { to: "/notifications", label: "Notifications", icon: Bell,            hideForRoles: ["super_admin"] },
   ]},
   { title: "Referral Network", items: [
     { to: "/doctors",     label: "Find Specialists",  icon: Search,            accountTypes: ["doctor", "hospital_admin"], hideForRoles: ["clinic_admin"] },
@@ -183,6 +184,7 @@ const PAGE_CONTEXT: Record<string, string> = {
   "/platform/institutions": "Institution registry",
   "/platform/analytics":  "Platform-wide analytics",
   "/platform/reports":    "Generated reports",
+  "/notifications":       "Your notification history",
 };
 
 function getPageContext(pathname: string): string {
