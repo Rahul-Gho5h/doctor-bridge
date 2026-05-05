@@ -324,7 +324,7 @@ export type Database = {
           created_by: string
           description: string | null
           id: string
-          referral_id: string
+          referral_id: string | null
           status: string
           title: string
           updated_at: string
@@ -334,7 +334,7 @@ export type Database = {
           created_by: string
           description?: string | null
           id?: string
-          referral_id: string
+          referral_id?: string | null
           status?: string
           title: string
           updated_at?: string
@@ -344,7 +344,7 @@ export type Database = {
           created_by?: string
           description?: string | null
           id?: string
-          referral_id?: string
+          referral_id?: string | null
           status?: string
           title?: string
           updated_at?: string

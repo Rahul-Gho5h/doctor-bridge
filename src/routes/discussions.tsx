@@ -480,7 +480,7 @@ function DiscussionsPage() {
     const { data: disc, error } = await supabase
       .from("case_discussions")
       .insert({
-        referral_id: newReferralId || "",
+        referral_id: newReferralId || null,
         created_by: user.id,
         title: newTitle.trim(),
         description: newDesc.trim() || null,
