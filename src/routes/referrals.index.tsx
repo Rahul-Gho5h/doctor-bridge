@@ -16,6 +16,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { relativeTime } from "@/lib/format";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/referrals/")({
   head: () => ({ meta: [{ title: "Referrals — Doctor Bridge" }] }),
@@ -134,7 +135,7 @@ function ReferralsPage() {
       .eq("referring_doctor_id", myDocId)
       .order("created_at", { ascending: false })
       .range(from, to);
-    if (error) { console.error(error); return; }
+    if (error) { console.error(error); toast.error("Failed to load sent referrals"); return; }
     const rows = data ?? [];
     setHasMoreSent(rows.length === PAGE_SIZE);
     const enriched = await enrich(rows);
@@ -152,7 +153,7 @@ function ReferralsPage() {
       .eq("specialist_id", myDocId)
       .order("created_at", { ascending: false })
       .range(from, to);
-    if (error) { console.error(error); return; }
+    if (error) { console.error(error); toast.error("Failed to load received referrals"); return; }
     const rows = data ?? [];
     setHasMoreReceived(rows.length === PAGE_SIZE);
     const enriched = await enrich(rows);
@@ -171,6 +172,7 @@ function ReferralsPage() {
   }, [myDocId, fetchSent, fetchReceived]);
 
   const loadMoreSent = async () => {
+    if (loadingMoreSent) return;
     const next = offsetSent + PAGE_SIZE;
     setLoadingMoreSent(true);
     await fetchSent(next, true);
@@ -179,6 +181,7 @@ function ReferralsPage() {
   };
 
   const loadMoreReceived = async () => {
+    if (loadingMoreReceived) return;
     const next = offsetReceived + PAGE_SIZE;
     setLoadingMoreReceived(true);
     await fetchReceived(next, true);

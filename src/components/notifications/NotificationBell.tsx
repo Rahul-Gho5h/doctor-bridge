@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { Bell, CheckCheck } from "lucide-react";
 import { useRouter } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
@@ -102,22 +102,26 @@ export function NotificationBell() {
   }, [user, load]);
 
   const markRead = async (id: string) => {
-    await supabase
+    const now = new Date().toISOString();
+    const { error } = await supabase
       .from("notifications")
-      .update({ read_at: new Date().toISOString() })
+      .update({ read_at: now })
       .eq("id", id);
-    setItems((prev) => prev.map((n) => n.id === id ? { ...n, read_at: new Date().toISOString() } : n));
+    if (error) { console.warn("[bell] markRead failed:", error); return; }
+    setItems((prev) => prev.map((n) => n.id === id ? { ...n, read_at: now } : n));
   };
 
   const markAllRead = async () => {
     if (!user) return;
     const ids = items.filter((n) => !n.read_at).map((n) => n.id);
     if (ids.length === 0) return;
-    await supabase
+    const now = new Date().toISOString();
+    const { error } = await supabase
       .from("notifications")
-      .update({ read_at: new Date().toISOString() })
+      .update({ read_at: now })
       .in("id", ids);
-    setItems((prev) => prev.map((n) => ({ ...n, read_at: n.read_at ?? new Date().toISOString() })));
+    if (error) { console.warn("[bell] markAllRead failed:", error); return; }
+    setItems((prev) => prev.map((n) => ({ ...n, read_at: n.read_at ?? now })));
   };
 
   const handleClick = async (n: Notification) => {
@@ -127,7 +131,7 @@ export function NotificationBell() {
     if (link) router.navigate({ to: link as any });
   };
 
-  const unread = items.filter((n) => !n.read_at).length;
+  const unread = useMemo(() => items.filter((n) => !n.read_at).length, [items]);
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>

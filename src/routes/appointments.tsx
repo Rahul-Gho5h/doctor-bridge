@@ -120,7 +120,7 @@ function AppointmentsPage() {
   const we = useMemo(() => addDays(ws, 6), [ws]);
 
   const load = useCallback(async () => {
-    if (!profile?.clinic_id) return;
+    if (!profile?.clinic_id) { setLoading(false); return; }
     setLoading(true);
     const { data } = await supabase
       .from("appointments")
@@ -198,7 +198,9 @@ function AppointmentsPage() {
         )}
       </div>
 
-      {loading ? (
+      {!profile?.clinic_id && !loading ? (
+        <EmptyState icon={Calendar} title="No clinic associated" description="This account is not linked to a clinic or hospital. Contact your administrator." />
+      ) : loading ? (
         <div className="space-y-3">
           {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-16 rounded-xl" />)}
         </div>
@@ -237,7 +239,7 @@ function AppointmentsPage() {
                           )}
                         >
                           <div className="truncate text-[11px] font-semibold">
-                            {a.patient?.first_name} {a.patient?.last_name}
+                            {a.patient ? `${a.patient.first_name} ${a.patient.last_name}` : "Unknown patient"}
                           </div>
                           <div className="mt-0.5 text-[10px] text-muted-foreground">
                             {fmtTime(a.scheduled_at)} · {TYPE_LABELS[a.type]}
@@ -291,8 +293,10 @@ function ApptDetail({
     <div className="rounded-xl border bg-card p-5 shadow-card space-y-4">
       <div className="flex items-start justify-between gap-2">
         <div>
-          <div className="font-semibold">{appt.patient?.first_name} {appt.patient?.last_name}</div>
-          <div className="text-xs text-muted-foreground">{appt.patient?.display_id}</div>
+          <div className="font-semibold">
+            {appt.patient ? `${appt.patient.first_name} ${appt.patient.last_name}` : "Unknown patient"}
+          </div>
+          <div className="text-xs text-muted-foreground">{appt.patient?.display_id ?? "—"}</div>
         </div>
         <button onClick={onClose} className="text-muted-foreground hover:text-foreground text-xs">✕</button>
       </div>
@@ -343,7 +347,7 @@ function TodayQueue({ appts, onSelect }: { appts: Appt[]; onSelect: (a: Appt) =>
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <div className="truncate text-sm font-semibold">
-                      {a.patient?.first_name} {a.patient?.last_name}
+                      {a.patient ? `${a.patient.first_name} ${a.patient.last_name}` : "Unknown patient"}
                     </div>
                     <div className="truncate text-xs text-muted-foreground">
                       {fmtTime(a.scheduled_at)} · {a.reason ?? TYPE_LABELS[a.type]}

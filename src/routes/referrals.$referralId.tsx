@@ -491,16 +491,14 @@ function ReferralDetailPage() {
                 if (ref.referring_doctor?.user_id) {
                   const specName = `Dr. ${ref.specialist?.profile?.first_name ?? ""} ${ref.specialist?.profile?.last_name ?? ""}`.trim();
                   const apptLabel = patch.appointment_date
-                    ? new Date(patch.appointment_date).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })
+                    ? new Date(patch.appointment_date as string).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })
                     : "a new time";
-                  void import("@/lib/notify").then(({ notifyUser }) =>
-                    notifyUser(ref.referring_doctor!.user_id, {
-                      type: "APPOINTMENT_SCHEDULED",
-                      title: "Appointment scheduled",
-                      message: `${specName} scheduled an appointment for ${ref.patient_snapshot?.name ?? "your patient"} on ${apptLabel}.`,
-                      data: { referral_id: ref.id },
-                    })
-                  );
+                  void notifyUser(ref.referring_doctor.user_id, {
+                    type: "APPOINTMENT_SCHEDULED",
+                    title: "Appointment scheduled",
+                    message: `${specName} scheduled an appointment for ${ref.patient_snapshot?.name ?? "your patient"} on ${apptLabel}.`,
+                    data: { referral_id: ref.id },
+                  });
                 }
               }}
             />
@@ -611,9 +609,12 @@ function AppointmentForm({
   const [saving, setSaving] = useState(false);
 
   const submit = async () => {
+    const parsed = new Date(date);
+    if (isNaN(parsed.getTime())) { toast.error("Invalid date — please pick a valid date and time"); return; }
+    if (parsed <= new Date()) { toast.error("Appointment must be in the future"); return; }
     setSaving(true);
     const patch: Record<string, unknown> = {
-      appointment_date: new Date(date).toISOString(),
+      appointment_date: parsed.toISOString(),
       appointment_notes: notes.trim() || null,
       status: "APPOINTMENT_BOOKED",
       appointment_booked_at: new Date().toISOString(),
@@ -773,11 +774,16 @@ function ReminderForm({ referralId, userId }: { referralId: string; userId: stri
   const [saving, setSaving] = useState(false);
 
   const save = async () => {
+    if (!message.trim()) { toast.error("Please enter a reminder message"); return; }
+    const remindDate = new Date(remindAt);
+    if (isNaN(remindDate.getTime()) || remindDate <= new Date()) {
+      toast.error("Reminder date must be in the future"); return;
+    }
     setSaving(true);
     const { error } = await supabase.from("follow_up_reminders").insert({
       referral_id: referralId,
       created_by: userId,
-      remind_at: new Date(remindAt).toISOString(),
+      remind_at: remindDate.toISOString(),
       reminder_type: type,
       message: message.trim(),
     });
