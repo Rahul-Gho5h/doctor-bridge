@@ -32,6 +32,15 @@ function useFadeIn() {
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
+
+    // Already in viewport (above-the-fold) — animate in immediately.
+    const rect = el.getBoundingClientRect();
+    if (rect.top < window.innerHeight && rect.bottom > 0) {
+      const t = setTimeout(() => el.classList.add("lp-visible"), 60);
+      return () => clearTimeout(t);
+    }
+
+    // Below the fold — use IntersectionObserver.
     const io = new IntersectionObserver(
       ([entry]) => { if (entry.isIntersecting) { el.classList.add("lp-visible"); io.disconnect(); } },
       { threshold: 0.06 },
