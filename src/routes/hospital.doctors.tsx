@@ -99,7 +99,7 @@ function HospitalDoctorsPage() {
         specialization: up?.specialization || "General",
         patient_count: 0, // Mock for now, would aggregate in real scenario
         referral_count: 0, // Mock for now
-        joined_at: aff.updated_at
+        joined_at: aff.updated_at ?? ""
       };
     });
 
@@ -114,9 +114,8 @@ function HospitalDoctorsPage() {
   const confirmRemove = async () => {
     if (!docToRemove) return;
     
-    const { error } = await supabase.rpc("remove_affiliation", {
-      _request_id: docToRemove.affiliation_request_id,
-      _reason: removeReason || "Removed by administrator"
+    const { error } = await supabase.rpc("detach_doctor_from_hospital", {
+      _doctor_user_id: docToRemove.user_id
     });
 
     if (error) {

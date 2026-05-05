@@ -575,7 +575,7 @@ export function PlatformReports() {
 
   return (
     <DashboardLayout>
-      <PageHeader title="Reports" subtitle="Download and share platform data with management" />
+      <PageHeader title="Reports" description="Download and share platform data with management" />
 
       {/* Filter bar */}
       <div className="mb-6 rounded-xl border bg-card p-4">

@@ -16,7 +16,7 @@ export function ThemeToggle() {
         <button
           key={value}
           title={label}
-          onClick={() => setTheme(value)}
+          onClick={() => setTheme()}
           className={cn(
             "flex h-7 w-7 items-center justify-center rounded-full transition-all",
             theme === value

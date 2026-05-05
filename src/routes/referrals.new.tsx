@@ -97,7 +97,7 @@ function NewReferralPage() {
     if (!user) return;
     (async () => {
       const { data: pts } = await supabase.rpc("search_global_patients", { _q: "" });
-      if (pts) setPatients(pts as PatientLite[]);
+      if (pts) setPatients(pts as unknown as PatientLite[]);
     })();
   }, [user]);
 
