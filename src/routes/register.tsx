@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DoctorRegisterForm } from "@/components/auth/DoctorRegisterForm";
@@ -26,6 +27,8 @@ const DOCTOR_CONTENT_CLS = "flex h-[440px] flex-col";
 const HOSPITAL_CONTENT_CLS = "max-h-[560px] overflow-y-auto pr-0.5";
 
 function RegisterPage() {
+  const [tab, setTab] = useState<"doctor" | "hospital">("doctor");
+
   return (
     <AuthShell
       heroTitle="Refer patients to the right specialist, fast."
@@ -36,10 +39,10 @@ function RegisterPage() {
         Free for 14 days — no credit card required. Ready in minutes.
       </p>
 
-      <Tabs defaultValue="doctor" className="mt-6">
+      <Tabs value={tab} onValueChange={(v) => setTab(v as "doctor" | "hospital")} className="mt-6">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="doctor">I'm a doctor</TabsTrigger>
-          <TabsTrigger value="hospital">Hospital / Clinic</TabsTrigger>
+          <TabsTrigger value="doctor" onClick={() => setTab("doctor")}>I'm a doctor</TabsTrigger>
+          <TabsTrigger value="hospital" onClick={() => setTab("hospital")}>Hospital / Clinic</TabsTrigger>
         </TabsList>
 
         {/* ── Doctor tab — fixed height, no scroll ── */}
