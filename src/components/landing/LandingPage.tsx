@@ -393,7 +393,7 @@ function ProblemSection() {
             <div
               key={title}
               style={reveal(cardsInView, i * 130)}
-              className="group relative overflow-hidden rounded-xl border border-[#E5E2DA] bg-white px-6 pb-7 pt-6 shadow-sm transition-shadow duration-300 hover:shadow-md hover:-translate-y-1"
+              className="group relative overflow-hidden rounded-xl border border-[#E5E2DA] bg-white dark:border-border dark:bg-card px-6 pb-7 pt-6 shadow-sm transition-shadow duration-300 hover:shadow-md hover:-translate-y-1"
             >
               <div
                 className="absolute inset-y-0 left-0 w-[3px] bg-[#C0392B] transition-opacity duration-300 opacity-100"
@@ -779,7 +779,7 @@ function Testimonials() {
             <div
               key={name}
               style={reveal(inView, i * 150)}
-              className="flex flex-col rounded-xl border border-[#E5E2DA] bg-white px-7 pb-7 pt-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
+              className="flex flex-col rounded-xl border border-[#E5E2DA] bg-white dark:border-border dark:bg-card px-7 pb-7 pt-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
             >
               {/* Quote mark */}
               <div
