@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useState, useCallback } from "react";
-import { Search, Stethoscope, MapPin, Languages, CheckCircle2, Send, ChevronDown } from "lucide-react";
+import { Search, Stethoscope, MapPin, Languages, CheckCircle2, Send, ChevronDown, X } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/common/PageHeader";
 import { EmptyState } from "@/components/common/EmptyState";

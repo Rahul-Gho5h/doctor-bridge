@@ -68,6 +68,7 @@ function ReferralDetailPage() {
   const { referralId } = Route.useParams();
   const { from } = Route.useSearch();
   const { user, profile, roles } = useAuth();
+  const router = useRouter();
   const [ref, setRef] = useState<ReferralFull | null>(null);
   const [messages, setMessages] = useState<MessageRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -195,7 +196,7 @@ function ReferralDetailPage() {
   if (loading) return <DashboardLayout><DetailSkeleton /></DashboardLayout>;
   if (!ref) return (
     <DashboardLayout>
-      <Link to="/referrals/" search={{ tab: from }} className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+      <Link to="/referrals" className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
         <ArrowLeft className="h-4 w-4" /> All referrals
       </Link>
       <EmptyState
@@ -253,7 +254,7 @@ function ReferralDetailPage() {
     setCancelOpen(false);
     if (ok) {
       toast.success("Referral cancelled");
-      router.navigate({ to: "/referrals/" });
+      router.navigate({ to: "/referrals" });
     }
   };
 
@@ -310,8 +311,7 @@ function ReferralDetailPage() {
   return (
     <DashboardLayout>
       <Link
-        to="/referrals/"
-        search={{ tab: from ?? (isSpecialistCheck ? "received" : "sent") }}
+        to="/referrals"
         className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" /> All referrals

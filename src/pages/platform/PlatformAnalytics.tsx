@@ -472,9 +472,9 @@ export function PlatformAnalytics() {
       // ── Avg hours to completion ───────────────────────────────────────────
       const completionTimes = (completionRows ?? [])
         .map((r: any) => (new Date(r.completed_at).getTime() - new Date(r.sent_at).getTime()) / 3_600_000)
-        .filter((h) => h > 0);
+        .filter((h: number) => h > 0);
       const avgHoursToCompletion = completionTimes.length
-        ? completionTimes.reduce((a, b) => a + b, 0) / completionTimes.length
+        ? completionTimes.reduce((a: number, b: number) => a + b, 0) / completionTimes.length
         : null;
 
       // ── Completion rate ───────────────────────────────────────────────────
@@ -554,8 +554,8 @@ export function PlatformAnalytics() {
     <DashboardLayout>
       <PageHeader
         title="Platform Analytics"
-        subtitle={lastRefreshed ? `Last refreshed ${lastRefreshed.toLocaleTimeString("en-IN")}` : "Loading…"}
-        action={
+        description={lastRefreshed ? `Last refreshed ${lastRefreshed.toLocaleTimeString("en-IN")}` : "Loading…"}
+        actions={
           <Button variant="outline" size="sm" onClick={() => loadData(dateRange, institutionId)} disabled={loading}>
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
             Refresh

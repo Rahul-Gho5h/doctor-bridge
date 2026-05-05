@@ -90,7 +90,7 @@ function ReferralsPage() {
   const handleTabChange = (value: string) => {
     const t = value as "sent" | "received";
     setActiveTab(t);
-    router.navigate({ to: "/referrals/", search: { tab: t }, replace: true });
+    router.navigate({ to: "/referrals", replace: true });
   };
 
   // Step 1: resolve my doctor profile ID once
@@ -294,6 +294,7 @@ function ReferralList({
   hasMore: boolean; loadingMore: boolean; onLoadMore: () => void;
   filtered?: boolean;
 }) {
+  const router = useRouter();
   if (loading) return <TableSkeleton columns={8} rows={5} />;
   if (rows.length === 0) {
     if (filtered) {

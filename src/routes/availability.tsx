@@ -184,7 +184,7 @@ function AvailabilityPage() {
       return;
     }
 
-    const payload = [];
+    const payload: { doctor_id: string; leave_date: string; reason: string | null }[] = [];
     const current = new Date(start);
     while (current <= end) {
       payload.push({

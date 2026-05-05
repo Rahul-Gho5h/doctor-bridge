@@ -104,7 +104,7 @@ export function InstitutionTab() {
     const { error } = await supabase
       .from("clinics")
       .update({
-        name: form.name || null,
+        name: form.name || undefined,
         phone: form.phone || null,
         address: form.address || null,
         city: form.city || null,

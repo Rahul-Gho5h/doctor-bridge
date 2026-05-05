@@ -479,7 +479,7 @@ export function PlatformInstitutions() {
                     {expandedId === c.id && (
                       <tr key={`${c.id}-detail`}>
                         <td colSpan={9} className="p-0">
-                          <InstitutionDetail clinic={c} />
+                          <InstitutionDetail clinic={c} onUpdate={load} />
                         </td>
                       </tr>
                     )}

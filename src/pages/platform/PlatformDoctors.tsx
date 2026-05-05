@@ -519,8 +519,8 @@ export function PlatformDoctors() {
     <DashboardLayout>
       <PageHeader
         title="Doctors"
-        subtitle="All doctors onboarded across the platform"
-        action={
+        description="All doctors onboarded across the platform"
+        actions={
           <Button variant="outline" size="sm" onClick={fetchDoctors} disabled={loading}>
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
             Refresh
@@ -632,7 +632,7 @@ export function PlatformDoctors() {
       )}
 
       {loading ? (
-        <TableSkeleton rows={6} cols={6} />
+        <TableSkeleton rows={6} columns={6} />
       ) : filtered.length === 0 ? (
         <div className="rounded-xl border border-dashed py-16 text-center text-sm text-muted-foreground">
           No doctors found matching your filters.

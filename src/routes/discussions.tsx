@@ -472,7 +472,7 @@ function DiscussionsPage() {
   };
 
   const createDiscussion = async () => {
-    if (!user || !profile || !newTitle.trim() || !newPatientKey) return;
+    if (!user || !profile || !newTitle.trim()) return;
     setCreating(true);
     const senderName = `Dr. ${(profile as any).first_name} ${(profile as any).last_name}`;
 
@@ -676,9 +676,11 @@ function DiscussionsPage() {
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0 flex-1">
                         <div className="truncate text-sm font-semibold">{d.title}</div>
-                        <div className="mt-0.5 truncate text-xs text-muted-foreground">
-                          {d.referral?.referral_number ?? "—"} · {d.referral?.primary_diagnosis ?? ""}
-                        </div>
+                        {d.referral && (
+                          <div className="mt-0.5 truncate text-xs text-muted-foreground">
+                            {d.referral.referral_number} · {d.referral.primary_diagnosis}
+                          </div>
+                        )}
                         {/* Fix 6 — last message preview or description */}
                         {(d.last_message || d.description) && (
                           <div className="mt-1 truncate text-xs text-muted-foreground/75">
@@ -732,11 +734,13 @@ function DiscussionsPage() {
                     {active.description && (
                       <p className="mt-0.5 text-sm text-muted-foreground">{active.description}</p>
                     )}
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Referral:{" "}
-                      <span className="font-medium text-foreground">{active.referral?.referral_number}</span>
-                      {" · "}{active.referral?.primary_diagnosis}
-                    </p>
+                    {active.referral && (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Referral:{" "}
+                        <span className="font-medium text-foreground">{active.referral.referral_number}</span>
+                        {" · "}{active.referral.primary_diagnosis}
+                      </p>
+                    )}
                   </div>
 
                   {/* Fix 5 — status action buttons (creator only) */}
@@ -999,7 +1003,7 @@ function DiscussionsPage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button>
             <Button
-              disabled={creating || !newTitle.trim() || !newPatientKey}
+              disabled={creating || !newTitle.trim()}
               onClick={createDiscussion}
             >
               <MessageSquareMore className="mr-1.5 h-4 w-4" />

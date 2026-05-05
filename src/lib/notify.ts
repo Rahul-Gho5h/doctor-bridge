@@ -17,10 +17,10 @@ export async function notifyUser(
   try {
     await supabase.from("notifications").insert({
       recipient_id: recipientId,
-      type:         payload.type,
+      type:         payload.type as any,
       title:        payload.title,
       message:      payload.message,
-      data:         payload.data ?? null,
+      data:         (payload.data ?? null) as any,
       sent_at:      new Date().toISOString(),
     });
   } catch {
