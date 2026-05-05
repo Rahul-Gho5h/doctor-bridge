@@ -56,10 +56,10 @@ export function LoginForm() {
       // clinic_admin → dedicated admin dashboard
       if (roles.includes("clinic_admin")) {
         const status = (profileData as any)?.clinics?.verification_status;
-        if (status !== "APPROVED") {
+        if (status !== "ACTIVE") {
           await supabase.auth.signOut();
           toast.error(
-            status === "DECLINED" 
+            status === "REJECTED" || status === "SUSPENDED"
               ? "Your hospital account application was declined. Please check your email for the reason."
               : "Your hospital account is pending approval by the Doctor Bridge administration."
           );
