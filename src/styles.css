@@ -234,6 +234,39 @@
   animation: lp-float 3s ease-in-out infinite;
 }
 
+/* ── Landing page: slow background orb drift ────────────────────────────── */
+@keyframes lp-drift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%       { transform: translate(50px, -35px) scale(1.06); }
+  66%       { transform: translate(-35px, 25px) scale(0.96); }
+}
+.animate-lp-drift-a { animation: lp-drift 20s ease-in-out infinite; }
+.animate-lp-drift-b { animation: lp-drift 16s ease-in-out infinite reverse; }
+.animate-lp-drift-c { animation: lp-drift 24s ease-in-out infinite 8s; }
+
+/* ── Landing page: step dot pop-in ─────────────────────────────────────── */
+@keyframes lp-pop {
+  0%   { transform: scale(0.4); opacity: 0; }
+  60%  { transform: scale(1.18); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.animate-lp-pop { animation: lp-pop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+
+/* ── Landing page: connector line draw ──────────────────────────────────── */
+@keyframes lp-line-draw {
+  from { width: 0; opacity: 0; }
+  5%   { opacity: 1; }
+  to   { width: 100%; opacity: 1; }
+}
+.animate-lp-line { animation: lp-line-draw 1.4s cubic-bezier(0.4, 0, 0.2, 1) both; }
+
+/* ── Landing page: card border glow pulse ───────────────────────────────── */
+@keyframes lp-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(26,122,110,0); }
+  50%       { box-shadow: 0 0 24px 4px rgba(26,122,110,0.22); }
+}
+.animate-lp-glow { animation: lp-glow 3s ease-in-out infinite; }
+
 /* ── Landing page: city marquee ─────────────────────────────────────────── */
 @keyframes lp-marquee {
   from { transform: translateX(0); }

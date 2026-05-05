@@ -5,7 +5,7 @@
  */
 
 import { Link } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, CSSProperties } from "react";
 import {
   Activity, ArrowRight, ClipboardList, Search,
   ShieldCheck, TrendingUp, Zap,
@@ -27,28 +27,35 @@ function useScrolled(threshold = 12) {
   return scrolled;
 }
 
-function useFadeIn() {
+/** Returns [ref, inView] — triggers once when the element enters the viewport. */
+function useInView(threshold = 0.08) {
   const ref = useRef<HTMLDivElement>(null);
+  const [inView, setInView] = useState(false);
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-
-    // Already in viewport (above-the-fold) — animate in immediately.
     const rect = el.getBoundingClientRect();
     if (rect.top < window.innerHeight && rect.bottom > 0) {
-      const t = setTimeout(() => el.classList.add("lp-visible"), 60);
-      return () => clearTimeout(t);
+      setInView(true);
+      return;
     }
-
-    // Below the fold — use IntersectionObserver.
     const io = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) { el.classList.add("lp-visible"); io.disconnect(); } },
-      { threshold: 0.06 },
+      ([entry]) => { if (entry.isIntersecting) { setInView(true); io.disconnect(); } },
+      { threshold },
     );
     io.observe(el);
     return () => io.disconnect();
-  }, []);
-  return ref;
+  }, [threshold]);
+  return [ref, inView] as const;
+}
+
+/** CSS transition helper for scroll-reveal. */
+function reveal(inView: boolean, delay = 0, distance = 28): CSSProperties {
+  return {
+    opacity: inView ? 1 : 0,
+    transform: inView ? "translateY(0)" : `translateY(${distance}px)`,
+    transition: `opacity 0.65s ease ${delay}ms, transform 0.65s ease ${delay}ms`,
+  };
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -118,7 +125,7 @@ const CITIES = ["Mumbai", "Delhi", "Bengaluru", "Chennai", "Hyderabad", "Pune", 
 function HeroCard() {
   return (
     <div
-      className="animate-lp-float w-full max-w-[400px] rounded-2xl border border-[#1F3347] bg-[#132030] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.5)]"
+      className="animate-lp-float animate-lp-glow w-full max-w-[400px] rounded-2xl border border-[#1F3347] bg-[#132030] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.5)]"
       style={{ backdropFilter: "blur(2px)" }}
     >
       {/* Card header */}
@@ -186,33 +193,48 @@ function HeroCard() {
 }
 
 function Hero() {
-  const ref = useFadeIn();
   const cityStr = CITIES.join("  ·  ") + "  ·  ";
 
   return (
     <section className="relative overflow-hidden bg-[#F7F6F2] px-6 pb-20 pt-28">
-      {/* Fine grid underlay */}
-      <div
-        className="pointer-events-none absolute inset-0 opacity-[0.025]"
-        style={{
-          backgroundImage:
-            "linear-gradient(#111009 1px, transparent 1px), linear-gradient(90deg, #111009 1px, transparent 1px)",
-          backgroundSize: "80px 80px",
-        }}
-      />
+      {/* ── Animated background layer ── */}
+      <div className="pointer-events-none absolute inset-0">
+        {/* Fine grid */}
+        <div
+          className="absolute inset-0 opacity-[0.025]"
+          style={{
+            backgroundImage:
+              "linear-gradient(#111009 1px, transparent 1px), linear-gradient(90deg, #111009 1px, transparent 1px)",
+            backgroundSize: "80px 80px",
+          }}
+        />
+        {/* Drifting teal orb — top left */}
+        <div
+          className="animate-lp-drift-a absolute -left-40 -top-40 h-[700px] w-[700px] rounded-full opacity-[0.07]"
+          style={{ background: "radial-gradient(closest-side, #1A7A6E, transparent)" }}
+        />
+        {/* Drifting amber orb — bottom right */}
+        <div
+          className="animate-lp-drift-b absolute -bottom-20 -right-20 h-[500px] w-[500px] rounded-full opacity-[0.06]"
+          style={{ background: "radial-gradient(closest-side, #E8B86D, transparent)" }}
+        />
+        {/* Small accent orb — center */}
+        <div
+          className="animate-lp-drift-c absolute left-1/2 top-1/3 h-[320px] w-[320px] -translate-x-1/2 rounded-full opacity-[0.04]"
+          style={{ background: "radial-gradient(closest-side, #4CAF7D, transparent)" }}
+        />
+      </div>
 
-      {/* Content wrapper — 2-col on lg */}
-      <div
-        ref={ref}
-        className="lp-fade relative z-10 mx-auto flex w-full max-w-6xl flex-col items-start gap-12 lg:flex-row lg:items-center lg:gap-16"
-      >
-        {/* ── LEFT: text ── */}
+      {/* ── Content wrapper — 2-col on lg ── */}
+      <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-col items-start gap-12 lg:flex-row lg:items-center lg:gap-16">
+
+        {/* LEFT: text — staggered reveal */}
         <div className="flex w-full max-w-xl flex-col items-center text-center lg:max-w-none lg:flex-1 lg:items-start lg:text-left">
 
           {/* Pill badge */}
           <div
-            className="font-plex-mono inline-flex items-center gap-2 rounded-full border border-[#1A7A6E]/30 px-3.5 py-1.5 text-[11px] text-[#1A7A6E]"
-            style={{ backgroundColor: "rgba(26,122,110,0.07)" }}
+            className="lp-fade font-plex-mono inline-flex items-center gap-2 rounded-full border border-[#1A7A6E]/30 px-3.5 py-1.5 text-[11px] text-[#1A7A6E]"
+            style={{ backgroundColor: "rgba(26,122,110,0.07)", animationDelay: "0ms" }}
           >
             <span className="h-1.5 w-1.5 rounded-full bg-[#1A7A6E]" />
             Doctor-to-doctor only &nbsp;·&nbsp; No patient login required
@@ -220,8 +242,8 @@ function Hero() {
 
           {/* Headline */}
           <h1
-            className="font-instrument mt-6 leading-[1.05] tracking-tight text-[#111009]"
-            style={{ fontSize: "clamp(44px, 5.5vw, 68px)" }}
+            className="lp-fade font-instrument mt-6 leading-[1.05] tracking-tight text-[#111009]"
+            style={{ fontSize: "clamp(44px, 5.5vw, 68px)", animationDelay: "90ms" }}
           >
             Stop losing patients
             <br />
@@ -230,8 +252,8 @@ function Hero() {
 
           {/* Subheadline */}
           <p
-            className="font-plex mt-5 max-w-[480px] leading-[1.7] text-[#4A4740]"
-            style={{ fontSize: "clamp(15px, 1.4vw, 17px)" }}
+            className="lp-fade font-plex mt-5 max-w-[480px] leading-[1.7] text-[#4A4740]"
+            style={{ fontSize: "clamp(15px, 1.4vw, 17px)", animationDelay: "200ms" }}
           >
             A verified network of NMC-registered specialists. Search by
             condition, confirm availability, send clinical context — all in one
@@ -239,10 +261,13 @@ function Hero() {
           </p>
 
           {/* CTAs */}
-          <div className="mt-8 flex flex-wrap items-center gap-4">
+          <div
+            className="lp-fade mt-8 flex flex-wrap items-center gap-4"
+            style={{ animationDelay: "310ms" }}
+          >
             <Link
               to="/register"
-              className="font-plex inline-flex items-center gap-2 rounded-xl bg-[#E8B86D] px-6 py-3.5 text-[13px] font-semibold text-[#111009] shadow-sm transition-all hover:scale-[1.02] hover:shadow-md"
+              className="font-plex inline-flex items-center gap-2 rounded-xl bg-[#E8B86D] px-6 py-3.5 text-[13px] font-semibold text-[#111009] shadow-sm transition-all hover:scale-[1.03] hover:shadow-lg active:scale-[0.98]"
             >
               Start referring <ArrowRight className="h-3.5 w-3.5" />
             </Link>
@@ -255,7 +280,10 @@ function Hero() {
           </div>
 
           {/* City scroll */}
-          <div className="mt-8 w-full">
+          <div
+            className="lp-fade mt-8 w-full"
+            style={{ animationDelay: "420ms" }}
+          >
             <p className="font-plex-mono mb-1.5 text-[9px] uppercase tracking-[0.2em] text-[#4A4740]/40">
               Used by doctors in
             </p>
@@ -267,8 +295,11 @@ function Hero() {
           </div>
         </div>
 
-        {/* ── RIGHT: card ── */}
-        <div className="flex w-full shrink-0 justify-center lg:w-[400px] lg:justify-end">
+        {/* RIGHT: card — slides in from right */}
+        <div
+          className="lp-fade flex w-full shrink-0 justify-center lg:w-[400px] lg:justify-end"
+          style={{ animationDelay: "150ms" }}
+        >
           <HeroCard />
         </div>
       </div>
@@ -287,14 +318,15 @@ const STATS = [
 ];
 
 function TrustBar() {
-  const ref = useFadeIn();
+  const [ref, inView] = useInView(0.3);
   return (
     <section className="bg-[#0C1824] py-10">
-      <div ref={ref} className="lp-fade mx-auto max-w-4xl px-6">
+      <div ref={ref} className="mx-auto max-w-4xl px-6">
         <div className="flex flex-wrap items-center justify-center">
           {STATS.map(({ number, label }, i) => (
             <div
               key={label}
+              style={reveal(inView, i * 100)}
               className={`flex flex-1 basis-1/2 flex-col items-center px-8 py-3 text-center md:basis-auto ${
                 i < STATS.length - 1 ? "md:border-r md:border-[#1F3347]" : ""
               }`}
@@ -335,11 +367,13 @@ const PAIN_POINTS = [
 ];
 
 function ProblemSection() {
-  const ref = useFadeIn();
+  const [headerRef, headerInView] = useInView();
+  const [cardsRef, cardsInView] = useInView();
+
   return (
     <section className="bg-[#F7F6F2] px-6 py-20">
-      <div ref={ref} className="lp-fade mx-auto max-w-5xl">
-        <div className="mb-12 text-center">
+      <div className="mx-auto max-w-5xl">
+        <div ref={headerRef} className="mb-12 text-center" style={reveal(headerInView)}>
           <div className="font-plex-mono mb-3 text-[10px] uppercase tracking-[0.22em] text-[#C0392B]">
             The problem
           </div>
@@ -354,13 +388,16 @@ function ProblemSection() {
           </p>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-3">
-          {PAIN_POINTS.map(({ num, title, body }) => (
+        <div ref={cardsRef} className="grid gap-4 md:grid-cols-3">
+          {PAIN_POINTS.map(({ num, title, body }, i) => (
             <div
               key={title}
-              className="group relative overflow-hidden rounded-xl border border-[#E5E2DA] bg-white px-6 pb-7 pt-6 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md"
-              style={{ borderLeft: "3px solid #C0392B" }}
+              style={reveal(cardsInView, i * 130)}
+              className="group relative overflow-hidden rounded-xl border border-[#E5E2DA] bg-white px-6 pb-7 pt-6 shadow-sm transition-shadow duration-300 hover:shadow-md hover:-translate-y-1"
             >
+              <div
+                className="absolute inset-y-0 left-0 w-[3px] bg-[#C0392B] transition-opacity duration-300 opacity-100"
+              />
               <div className="font-plex-mono mb-4 text-[10px] font-semibold tracking-widest text-[#C0392B]/50">
                 {num}
               </div>
@@ -414,12 +451,39 @@ const FEATURES = [
   },
 ];
 
+function FeatureCard({
+  Icon, category, title, body, style,
+}: { Icon: React.ComponentType<{ className?: string }>; category: string; title: string; body: string; style?: CSSProperties }) {
+  return (
+    <div
+      className="group relative overflow-hidden rounded-xl border border-[#1F3347] bg-[#132030] p-6 transition-all duration-300 hover:-translate-y-1 hover:border-[#1A7A6E]/50 hover:shadow-[0_8px_32px_-4px_rgba(26,122,110,0.2)]"
+      style={style}
+    >
+      <div className="absolute inset-y-0 left-0 w-[3px] bg-[#1A7A6E] opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+      <div className="flex items-start gap-4">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[#1A7A6E]/20 bg-[#1A7A6E]/10 transition-colors duration-200 group-hover:bg-[#1A7A6E]/20">
+          <Icon className="h-[18px] w-[18px] text-[#1A7A6E]" />
+        </div>
+        <div>
+          <div className="font-plex-mono mb-1.5 text-[10px] uppercase tracking-widest text-[#4A6070]">
+            {category}
+          </div>
+          <h3 className="font-instrument text-[19px] leading-snug text-white">{title}</h3>
+          <p className="font-plex mt-2 text-[13px] leading-relaxed text-[#6B8A9E]">{body}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function FeaturesSection() {
-  const ref = useFadeIn();
+  const [headerRef, headerInView] = useInView();
+  const [cardsRef, cardsInView] = useInView();
+
   return (
     <section id="features" className="bg-[#0C1824] px-6 py-20">
-      <div ref={ref} className="lp-fade mx-auto max-w-5xl">
-        <div className="mb-12 text-center">
+      <div className="mx-auto max-w-5xl">
+        <div ref={headerRef} className="mb-12 text-center" style={reveal(headerInView)}>
           <div className="font-plex-mono mb-3 text-[10px] uppercase tracking-[0.22em] text-[#1A7A6E]">
             Capabilities
           </div>
@@ -431,20 +495,26 @@ function FeaturesSection() {
           </h2>
         </div>
 
-        {/* 2×2 grid + 1 full-width */}
-        <div className="grid gap-3 md:grid-cols-2">
-          {FEATURES.slice(0, 4).map(({ Icon, category, title, body }) => (
-            <FeatureCard key={title} Icon={Icon} category={category} title={title} body={body} />
+        {/* 2×2 grid */}
+        <div ref={cardsRef} className="grid gap-3 md:grid-cols-2">
+          {FEATURES.slice(0, 4).map(({ Icon, category, title, body }, i) => (
+            <FeatureCard
+              key={title}
+              Icon={Icon}
+              category={category}
+              title={title}
+              body={body}
+              style={reveal(cardsInView, i * 100)}
+            />
           ))}
         </div>
-        {/* Last card — full width, distinguished treatment */}
-        <div className="mt-3">
-          <div
-            className="group relative overflow-hidden rounded-xl border border-[#1F3347] bg-[#132030] px-8 py-6 transition-all duration-200 hover:border-[#1A7A6E]/40 hover:shadow-xl"
-          >
+
+        {/* Last card — full width */}
+        <div className="mt-3" style={reveal(cardsInView, 400)}>
+          <div className="group relative overflow-hidden rounded-xl border border-[#1F3347] bg-[#132030] px-8 py-6 transition-all duration-300 hover:border-[#1A7A6E]/50 hover:shadow-[0_8px_32px_-4px_rgba(26,122,110,0.2)]">
             <div className="absolute inset-y-0 left-0 w-[3px] bg-[#1A7A6E] opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
             <div className="flex flex-col gap-5 md:flex-row md:items-center">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-[#1A7A6E]/20 bg-[#1A7A6E]/10">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-[#1A7A6E]/20 bg-[#1A7A6E]/10 transition-colors duration-200 group-hover:bg-[#1A7A6E]/20">
                 <TrendingUp className="h-5 w-5 text-[#1A7A6E]" />
               </div>
               <div className="flex-1">
@@ -470,28 +540,6 @@ function FeaturesSection() {
   );
 }
 
-function FeatureCard({
-  Icon, category, title, body,
-}: { Icon: React.ComponentType<{ className?: string }>; category: string; title: string; body: string }) {
-  return (
-    <div className="group relative overflow-hidden rounded-xl border border-[#1F3347] bg-[#132030] p-6 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#1A7A6E]/40 hover:shadow-xl">
-      <div className="absolute inset-y-0 left-0 w-[3px] bg-[#1A7A6E] opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-      <div className="flex items-start gap-4">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[#1A7A6E]/20 bg-[#1A7A6E]/10">
-          <Icon className="h-[18px] w-[18px] text-[#1A7A6E]" />
-        </div>
-        <div>
-          <div className="font-plex-mono mb-1.5 text-[10px] uppercase tracking-widest text-[#4A6070]">
-            {category}
-          </div>
-          <h3 className="font-instrument text-[19px] leading-snug text-white">{title}</h3>
-          <p className="font-plex mt-2 text-[13px] leading-relaxed text-[#6B8A9E]">{body}</p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 /* ─────────────────────────────────────────────────────────────────────────────
    6. HOW IT WORKS
 ───────────────────────────────────────────────────────────────────────────── */
@@ -503,11 +551,11 @@ const STEPS = [
 ];
 
 function HowItWorks() {
-  const ref = useFadeIn();
+  const [ref, inView] = useInView(0.15);
   return (
     <section id="how-it-works" className="bg-[#F7F6F2] px-6 py-20">
-      <div ref={ref} className="lp-fade mx-auto max-w-5xl">
-        <div className="mb-14 text-center">
+      <div className="mx-auto max-w-5xl">
+        <div style={reveal(inView)} className="mb-14 text-center">
           <div className="font-plex-mono mb-3 text-[10px] uppercase tracking-[0.22em] text-[#1A7A6E]">
             How it works
           </div>
@@ -519,14 +567,27 @@ function HowItWorks() {
           </h2>
         </div>
 
-        <div className="relative">
-          {/* Connector line — desktop */}
-          <div className="absolute left-[12.5%] right-[12.5%] top-5 hidden border-t-2 border-dashed border-[#1A7A6E]/20 md:block" />
+        <div ref={ref} className="relative">
+          {/* Animated connector line */}
+          <div className="absolute left-[12.5%] right-[12.5%] top-5 hidden overflow-hidden md:block">
+            <div
+              className={`h-0 border-t-2 border-dashed border-[#1A7A6E]/30 ${inView ? "animate-lp-line" : ""}`}
+              style={{ animationDelay: "200ms" }}
+            />
+          </div>
 
           <div className="grid gap-10 md:grid-cols-4">
-            {STEPS.map(({ n, title, body }) => (
-              <div key={n} className="relative flex flex-col items-center text-center">
-                <div className="relative z-10 flex h-10 w-10 items-center justify-center rounded-full border-2 border-[#1A7A6E] bg-[#F7F6F2] shadow-[0_0_0_4px_#F7F6F2]">
+            {STEPS.map(({ n, title, body }, i) => (
+              <div
+                key={n}
+                className="relative flex flex-col items-center text-center"
+                style={reveal(inView, 100 + i * 140)}
+              >
+                {/* Pop-in step dot */}
+                <div
+                  className={`relative z-10 flex h-10 w-10 items-center justify-center rounded-full border-2 border-[#1A7A6E] bg-[#F7F6F2] shadow-[0_0_0_4px_#F7F6F2] ${inView ? "animate-lp-pop" : "opacity-0"}`}
+                  style={{ animationDelay: `${250 + i * 140}ms` }}
+                >
                   <span className="font-plex-mono text-[11px] font-semibold text-[#1A7A6E]">{n}</span>
                 </div>
                 <h3 className="font-instrument mt-5 text-[18px] leading-snug text-[#111009]">{title}</h3>
@@ -550,11 +611,11 @@ const REFERRAL_LIST_ITEMS = [
 ];
 
 function ProductMockup() {
-  const ref = useFadeIn();
+  const [ref, inView] = useInView(0.1);
   return (
     <section className="bg-[#0C1824] px-6 py-20">
-      <div ref={ref} className="lp-fade mx-auto max-w-5xl">
-        <div className="mb-10 text-center">
+      <div className="mx-auto max-w-5xl">
+        <div style={reveal(inView)} className="mb-10 text-center">
           <div className="font-plex-mono mb-3 text-[10px] uppercase tracking-[0.22em] text-[#1A7A6E]">
             Product
           </div>
@@ -567,8 +628,12 @@ function ProductMockup() {
         </div>
 
         {/* Browser shell */}
-        <div className="overflow-hidden rounded-2xl border border-[#1F3347] shadow-[0_40px_80px_-20px_rgba(0,0,0,0.5)]">
-          {/* Chrome */}
+        <div
+          ref={ref}
+          style={reveal(inView, 150, 40)}
+          className="overflow-hidden rounded-2xl border border-[#1F3347] shadow-[0_40px_80px_-20px_rgba(0,0,0,0.5)]"
+        >
+          {/* Chrome bar */}
           <div className="flex items-center gap-2 border-b border-[#1F3347] bg-[#0C1824] px-4 py-3">
             <span className="h-2.5 w-2.5 rounded-full bg-[#FF5F57]" />
             <span className="h-2.5 w-2.5 rounded-full bg-[#FFBD2E]" />
@@ -693,11 +758,11 @@ const TESTIMONIALS = [
 ];
 
 function Testimonials() {
-  const ref = useFadeIn();
+  const [ref, inView] = useInView();
   return (
     <section className="bg-[#F7F6F2] px-6 py-20">
-      <div ref={ref} className="lp-fade mx-auto max-w-4xl">
-        <div className="mb-12 text-center">
+      <div className="mx-auto max-w-4xl">
+        <div style={reveal(inView)} className="mb-12 text-center">
           <div className="font-plex-mono mb-3 text-[10px] uppercase tracking-[0.22em] text-[#1A7A6E]">
             From the network
           </div>
@@ -709,11 +774,12 @@ function Testimonials() {
           </h2>
         </div>
 
-        <div className="grid gap-5 md:grid-cols-2">
-          {TESTIMONIALS.map(({ initials, quote, name, role }) => (
+        <div ref={ref} className="grid gap-5 md:grid-cols-2">
+          {TESTIMONIALS.map(({ initials, quote, name, role }, i) => (
             <div
               key={name}
-              className="flex flex-col rounded-xl border border-[#E5E2DA] bg-white px-7 pb-7 pt-6 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md"
+              style={reveal(inView, i * 150)}
+              className="flex flex-col rounded-xl border border-[#E5E2DA] bg-white px-7 pb-7 pt-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
             >
               {/* Quote mark */}
               <div
@@ -750,18 +816,30 @@ function Testimonials() {
    9. FINAL CTA
 ───────────────────────────────────────────────────────────────────────────── */
 function FinalCTA() {
-  const ref = useFadeIn();
+  const [ref, inView] = useInView(0.2);
   return (
     <section id="for-specialists" className="relative overflow-hidden bg-[#1A7A6E] px-6 py-20">
-      {/* Subtle texture */}
-      <div
-        className="pointer-events-none absolute inset-0 opacity-[0.04]"
-        style={{
-          backgroundImage: "radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 50%, white 1px, transparent 1px)",
-          backgroundSize: "48px 48px",
-        }}
-      />
-      <div ref={ref} className="lp-fade relative mx-auto max-w-2xl text-center">
+      {/* Animated orb accents */}
+      <div className="pointer-events-none absolute inset-0">
+        <div
+          className="animate-lp-drift-a absolute -left-32 top-0 h-[400px] w-[400px] rounded-full opacity-20"
+          style={{ background: "radial-gradient(closest-side, #4CAF7D, transparent)" }}
+        />
+        <div
+          className="animate-lp-drift-b absolute -bottom-20 right-0 h-[350px] w-[350px] rounded-full opacity-15"
+          style={{ background: "radial-gradient(closest-side, #E8B86D, transparent)" }}
+        />
+        {/* Dot texture */}
+        <div
+          className="absolute inset-0 opacity-[0.04]"
+          style={{
+            backgroundImage: "radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 50%, white 1px, transparent 1px)",
+            backgroundSize: "48px 48px",
+          }}
+        />
+      </div>
+
+      <div ref={ref} className="relative mx-auto max-w-2xl text-center" style={reveal(inView)}>
         <h2
           className="font-instrument leading-[1.1] text-white"
           style={{ fontSize: "clamp(30px, 4.5vw, 50px)" }}
@@ -773,7 +851,7 @@ function FinalCTA() {
         </p>
         <Link
           to="/register"
-          className="font-plex mt-9 inline-flex items-center gap-2 rounded-xl bg-white px-7 py-3.5 text-[13px] font-semibold text-[#111009] shadow-md transition-all hover:scale-[1.02] hover:shadow-lg"
+          className="font-plex mt-9 inline-flex items-center gap-2 rounded-xl bg-white px-7 py-3.5 text-[13px] font-semibold text-[#111009] shadow-md transition-all hover:scale-[1.03] hover:shadow-xl active:scale-[0.98]"
         >
           Create your account <ArrowRight className="h-4 w-4" />
         </Link>
