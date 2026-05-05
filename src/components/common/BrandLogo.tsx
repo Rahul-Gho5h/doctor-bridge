@@ -20,7 +20,7 @@ export function BrandLogo({ size = "md", showTagline = true, className, asLink =
   const inner = (
     <div className="flex flex-col justify-center">
       <div className="flex items-center gap-2">
-        <Activity className={cn("shrink-0 text-[#1A7A6E]", iconSize)} strokeWidth={2.5} />
+        <Activity className={cn("shrink-0 text-primary", iconSize)} strokeWidth={2.5} />
         <span className={cn("font-instrument leading-none text-current", titleSize)}>{BRAND.name}</span>
       </div>
       {showTagline && (
