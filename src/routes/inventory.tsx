@@ -170,7 +170,7 @@ function ItemForm({
             <Label>Name *</Label>
             <Input value={form.name} onChange={set("name")} placeholder="e.g. Amoxicillin 500mg" />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             <div className="grid gap-1.5">
               <Label>Category</Label>
               <Select value={form.category} onValueChange={(v) => setForm((f) => ({ ...f, category: v as Category }))}>
@@ -187,7 +187,7 @@ function ItemForm({
               <Input value={form.unit} onChange={set("unit")} placeholder="units / boxes / vials" />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             <div className="grid gap-1.5">
               <Label>Min quantity (reorder)</Label>
               <Input type="number" min={0} value={form.min_quantity} onChange={set("min_quantity")} />
@@ -197,7 +197,7 @@ function ItemForm({
               <Input type="number" min={0} step="0.01" value={form.cost_price} onChange={set("cost_price")} placeholder="0.00" />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             <div className="grid gap-1.5">
               <Label>SKU (optional)</Label>
               <Input value={form.sku} onChange={set("sku")} placeholder="SKU-001" />

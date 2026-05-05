@@ -1,6 +1,6 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
-import { Send, MessageSquare, Search, Check, CheckCheck, ArrowRight, Plus } from "lucide-react";
+import { Send, MessageSquare, Search, Check, CheckCheck, ArrowRight, ArrowLeft, Plus } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/common/PageHeader";
 import { EmptyState } from "@/components/common/EmptyState";
@@ -52,6 +52,7 @@ function MessagesPage() {
   const [unreadMap, setUnreadMap] = useState<Map<string, number>>(new Map());
 
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [mobileView, setMobileView] = useState<"list" | "chat">("list");
   const [messages, setMessages] = useState<Message[]>([]);
   const [messagesLoading, setMessagesLoading] = useState(false);
 
@@ -127,6 +128,7 @@ function MessagesPage() {
       const { data, error } = await supabase.rpc("get_or_create_dm_thread", { _other: to });
       if (error) { toast.error(error.message); return; }
       setActiveId(data as string);
+      setMobileView("chat");
       loadThreads();
     })();
   }, [to, user, loadThreads]);
@@ -136,6 +138,7 @@ function MessagesPage() {
   useEffect(() => {
     if (!thread || !user) return;
     setActiveId(thread);
+    setMobileView("chat");
     loadThreads();
   }, [thread, user, loadThreads]);
 
@@ -275,7 +278,10 @@ function MessagesPage() {
         <div className="grid h-[calc(100vh-12rem)] grid-cols-1 gap-4 overflow-hidden md:grid-cols-[320px_1fr]">
 
           {/* ── Thread list ─────────────────────────────────────────────────── */}
-          <aside className="flex flex-col overflow-hidden rounded-xl border bg-card shadow-card">
+          <aside className={cn(
+            "flex-col overflow-hidden rounded-xl border bg-card shadow-card",
+            mobileView === "chat" ? "hidden md:flex" : "flex",
+          )}>
             <div className="space-y-2 border-b p-3">
               <div className="relative">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -312,7 +318,7 @@ function MessagesPage() {
                   return (
                     <button
                       key={t.id}
-                      onClick={() => setActiveId(t.id)}
+                      onClick={() => { setActiveId(t.id); setMobileView("chat"); }}
                       className={cn(
                         "w-full border-b px-4 py-3 text-left transition-colors hover:bg-muted/40",
                         activeId === t.id && "bg-muted/60",
@@ -347,7 +353,10 @@ function MessagesPage() {
           </aside>
 
           {/* ── Chat pane ───────────────────────────────────────────────────── */}
-          <section className="flex flex-col overflow-hidden rounded-xl border bg-card shadow-card">
+          <section className={cn(
+            "flex-col overflow-hidden rounded-xl border bg-card shadow-card",
+            mobileView === "list" ? "hidden md:flex" : "flex",
+          )}>
             {!active ? (
               <div className="flex flex-1 items-center justify-center p-6">
                 <EmptyState
@@ -360,12 +369,22 @@ function MessagesPage() {
               <>
                 {/* Header */}
                 <div className="flex items-center justify-between gap-3 border-b px-5 py-3">
-                  <div>
-                    <div className="font-semibold">
-                      Dr. {active.other?.first_name} {active.other?.last_name}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {active.other?.specialization ?? active.other?.title ?? "—"}
+                  <div className="flex min-w-0 items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 shrink-0 md:hidden"
+                      onClick={() => setMobileView("list")}
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                    </Button>
+                    <div>
+                      <div className="font-semibold">
+                        Dr. {active.other?.first_name} {active.other?.last_name}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {active.other?.specialization ?? active.other?.title ?? "—"}
+                      </div>
                     </div>
                   </div>
                   {active.other_doctor_profile_id && (
