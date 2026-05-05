@@ -23,7 +23,8 @@ export async function notifyUser(
       data:         (payload.data ?? null) as any,
       sent_at:      new Date().toISOString(),
     });
-  } catch {
+  } catch (err) {
     // Notification failures are non-fatal — primary action already succeeded
+    console.warn("[notify] failed to insert notification:", err);
   }
 }

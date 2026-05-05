@@ -491,16 +491,14 @@ function ReferralDetailPage() {
                 if (ref.referring_doctor?.user_id) {
                   const specName = `Dr. ${ref.specialist?.profile?.first_name ?? ""} ${ref.specialist?.profile?.last_name ?? ""}`.trim();
                   const apptLabel = patch.appointment_date
-                    ? new Date(patch.appointment_date).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })
+                    ? new Date(patch.appointment_date as string).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })
                     : "a new time";
-                  void import("@/lib/notify").then(({ notifyUser }) =>
-                    notifyUser(ref.referring_doctor!.user_id, {
-                      type: "APPOINTMENT_SCHEDULED",
-                      title: "Appointment scheduled",
-                      message: `${specName} scheduled an appointment for ${ref.patient_snapshot?.name ?? "your patient"} on ${apptLabel}.`,
-                      data: { referral_id: ref.id },
-                    })
-                  );
+                  void notifyUser(ref.referring_doctor.user_id, {
+                    type: "APPOINTMENT_SCHEDULED",
+                    title: "Appointment scheduled",
+                    message: `${specName} scheduled an appointment for ${ref.patient_snapshot?.name ?? "your patient"} on ${apptLabel}.`,
+                    data: { referral_id: ref.id },
+                  });
                 }
               }}
             />
@@ -521,7 +519,13 @@ function ReferralDetailPage() {
           )}
 
           {isSpecialist && (ref.status === "ACCEPTED" || ref.status === "APPOINTMENT_BOOKED") && (
-            <OutcomeForm referralId={ref.id} onSaved={(patch) => setRef({ ...ref, ...patch })} />
+            <OutcomeForm
+              referralId={ref.id}
+              referringDoctorUserId={ref.referring_doctor?.user_id ?? null}
+              patientName={ref.patient_snapshot?.name ?? "patient"}
+              specialistName={`Dr. ${ref.specialist?.profile?.first_name ?? ""} ${ref.specialist?.profile?.last_name ?? ""}`.trim()}
+              onSaved={(patch) => setRef({ ...ref, ...patch })}
+            />
           )}
 
           {ref.outcome && (
@@ -605,9 +609,12 @@ function AppointmentForm({
   const [saving, setSaving] = useState(false);
 
   const submit = async () => {
+    const parsed = new Date(date);
+    if (isNaN(parsed.getTime())) { toast.error("Invalid date — please pick a valid date and time"); return; }
+    if (parsed <= new Date()) { toast.error("Appointment must be in the future"); return; }
     setSaving(true);
     const patch: Record<string, unknown> = {
-      appointment_date: new Date(date).toISOString(),
+      appointment_date: parsed.toISOString(),
       appointment_notes: notes.trim() || null,
       status: "APPOINTMENT_BOOKED",
       appointment_booked_at: new Date().toISOString(),
@@ -652,21 +659,51 @@ function AppointmentForm({
   );
 }
 
-function OutcomeForm({ referralId, onSaved }: { referralId: string; onSaved: (patch: Partial<ReferralFull>) => void }) {
+function OutcomeForm({
+  referralId, referringDoctorUserId, patientName, specialistName, onSaved,
+}: {
+  referralId: string;
+  referringDoctorUserId: string | null;
+  patientName: string;
+  specialistName: string;
+  onSaved: (patch: Partial<ReferralFull>) => void;
+}) {
   const [outcome, setOutcome] = useState<string>("");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
+
+  const OUTCOMES: { value: string; label: string }[] = [
+    { value: "TREATED_AND_DISCHARGED", label: "Treated and discharged" },
+    { value: "ONGOING_TREATMENT",      label: "Ongoing treatment" },
+    { value: "REFERRED_FURTHER",       label: "Referred further" },
+    { value: "PATIENT_NO_SHOW",        label: "Patient did not attend" },
+    { value: "DECLINED_BY_PATIENT",    label: "Declined by patient" },
+    { value: "TREATMENT_NOT_REQUIRED", label: "Treatment not required" },
+  ];
 
   const submit = async () => {
     if (!outcome) { toast.error("Pick an outcome"); return; }
     setSaving(true);
     const now = new Date().toISOString();
-    const patch: Record<string, unknown> = { outcome, outcome_notes: notes || null, outcome_recorded_at: now, status: "COMPLETED", completed_at: now };
+    const patch: Record<string, unknown> = {
+      outcome, outcome_notes: notes || null,
+      outcome_recorded_at: now, status: "COMPLETED", completed_at: now,
+    };
     const { error } = await supabase.from("referrals").update(patch as never).eq("id", referralId);
     setSaving(false);
     if (error) { toast.error(error.message); return; }
     onSaved(patch as Partial<ReferralFull>);
-    toast.success("Outcome recorded");
+    toast.success("Outcome recorded — referring doctor notified");
+
+    if (referringDoctorUserId) {
+      const outcomeLabel = OUTCOMES.find((o) => o.value === outcome)?.label ?? outcome;
+      void notifyUser(referringDoctorUserId, {
+        type:    "REFERRAL_OUTCOME" as any,
+        title:   "Referral outcome recorded",
+        message: `${specialistName} recorded the outcome for ${patientName}: ${outcomeLabel}.${notes ? ` Notes: ${notes.slice(0, 100)}` : ""}`,
+        data:    { referral_id: referralId },
+      });
+    }
   };
 
   return (
@@ -677,17 +714,16 @@ function OutcomeForm({ referralId, onSaved }: { referralId: string; onSaved: (pa
           <Select value={outcome} onValueChange={setOutcome}>
             <SelectTrigger><SelectValue placeholder="Select outcome" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="TREATED_AND_DISCHARGED">Treated and discharged</SelectItem>
-              <SelectItem value="ONGOING_TREATMENT">Ongoing treatment</SelectItem>
-              <SelectItem value="REFERRED_FURTHER">Referred further</SelectItem>
-              <SelectItem value="DECLINED_BY_PATIENT">Declined by patient</SelectItem>
-              <SelectItem value="TREATMENT_NOT_REQUIRED">Treatment not required</SelectItem>
+              {OUTCOMES.map((o) => (
+                <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
         <div className="space-y-2">
-          <Label>Notes (optional)</Label>
-          <Textarea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} />
+          <Label>Clinical summary / notes (optional)</Label>
+          <Textarea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)}
+            placeholder="Key findings, treatment given, follow-up plan…" />
         </div>
         <Button onClick={submit} disabled={saving}>{saving ? "Saving…" : "Save outcome"}</Button>
       </div>
@@ -738,11 +774,16 @@ function ReminderForm({ referralId, userId }: { referralId: string; userId: stri
   const [saving, setSaving] = useState(false);
 
   const save = async () => {
+    if (!message.trim()) { toast.error("Please enter a reminder message"); return; }
+    const remindDate = new Date(remindAt);
+    if (isNaN(remindDate.getTime()) || remindDate <= new Date()) {
+      toast.error("Reminder date must be in the future"); return;
+    }
     setSaving(true);
     const { error } = await supabase.from("follow_up_reminders").insert({
       referral_id: referralId,
       created_by: userId,
-      remind_at: new Date(remindAt).toISOString(),
+      remind_at: remindDate.toISOString(),
       reminder_type: type,
       message: message.trim(),
     });

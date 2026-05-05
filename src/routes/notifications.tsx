@@ -52,6 +52,7 @@ function resolveLink(n: NotificationRow): string | null {
     case "REFERRAL_ACCEPTED":
     case "REFERRAL_DECLINED":
     case "REFERRAL_MESSAGE":
+    case "REFERRAL_OUTCOME":
     case "APPOINTMENT_SCHEDULED":
     case "FOLLOW_UP_REMINDER":
     case "APPOINTMENT_REMINDER":
@@ -75,6 +76,7 @@ function typeIcon(type: string): string {
     case "REFERRAL_ACCEPTED":      return "✅";
     case "REFERRAL_DECLINED":      return "❌";
     case "REFERRAL_MESSAGE":       return "💬";
+    case "REFERRAL_OUTCOME":       return "📝";
     case "APPOINTMENT_SCHEDULED":  return "📅";
     case "FOLLOW_UP_REMINDER":     return "⏰";
     case "APPOINTMENT_REMINDER":   return "🔔";

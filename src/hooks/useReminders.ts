@@ -48,16 +48,11 @@ export function useReminders(userId: string | undefined) {
 
     // Delay the first check by 10 s so it doesn't fire while the user is
     // still settling into the app after login. After that, poll every 5 min.
+    let intervalRef: ReturnType<typeof setInterval> | undefined;
     const startup = setTimeout(() => {
       void check();
-      const id = setInterval(check, POLL_INTERVAL_MS);
-      // Store the interval id on the timeout ref so cleanup can reach it.
-      // We close over `id` so the cleanup below handles it.
-      // eslint-disable-next-line @typescript-eslint/no-use-before-define
-      intervalRef = id;
+      intervalRef = setInterval(check, POLL_INTERVAL_MS);
     }, 10_000);
-
-    let intervalRef: ReturnType<typeof setInterval> | undefined;
 
     return () => {
       clearTimeout(startup);
