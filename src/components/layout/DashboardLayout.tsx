@@ -221,11 +221,14 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     return () => clearTimeout(t);
   }, [loading]);
 
-  // Auth guard
+  // Auth guard — skip if already on a public route to avoid redirect loops
+  const PUBLIC_PATHS = ["/login", "/register", "/forgot-password", "/reset-password", "/auth-callback"];
   useEffect(() => {
     if (!loading && !user) {
+      if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) return;
       router.navigate({ to: "/login", search: { redirect: pathname } as never });
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, user, router, pathname]);
 
   // Role guard — clinic_admin
@@ -275,8 +278,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
+    router.navigate({ to: "/login", replace: true } as never);
     toast.success("Signed out");
-    router.navigate({ to: "/login" });
   };
 
   // ── Timed out: unable to load session ──────────────────────────────────────

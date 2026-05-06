@@ -1,9 +1,18 @@
-import { Outlet, createRootRouteWithContext, HeadContent, Scripts } from "@tanstack/react-router";
+import { Outlet, createRootRouteWithContext, HeadContent, Scripts, useRouterState } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/sonner";
+import { toast } from "sonner";
 import { AuthProvider } from "@/hooks/AuthContext";
 import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 import appCss from "../styles.css?url";
+
+/** Dismiss all pending toasts whenever the route changes. */
+function ToastDismissOnNav() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  useEffect(() => { toast.dismiss(); }, [pathname]);
+  return null;
+}
 
 interface RouterContext { queryClient: QueryClient }
 
@@ -56,10 +65,11 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
+        <ToastDismissOnNav />
         <ErrorBoundary>
           <Outlet />
         </ErrorBoundary>
-        <Toaster richColors position="top-right" />
+        <Toaster richColors position="top-right" duration={3500} />
       </AuthProvider>
     </QueryClientProvider>
   );
