@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Doctor Bridge — Landing Page
  * "Clinical editorial" — Instrument Serif headlines, IBM Plex Sans body,
  * IBM Plex Mono data. Warm parchment + deep ink palette.
@@ -11,7 +11,6 @@ import {
   ShieldCheck, TrendingUp, Zap,
 } from "lucide-react";
 import { BRAND } from "@/lib/brand";
-import { ThemeToggle } from "@/components/common/ThemeToggle";
 
 /* ─────────────────────────────────────────────────────────────────────────────
    HOOKS
@@ -99,7 +98,6 @@ function Navbar() {
 
         {/* Auth */}
         <div className="flex items-center gap-2">
-          <ThemeToggle />
           <Link
             to="/login"
             className="font-plex hidden rounded-lg px-4 py-2 text-[13px] font-medium text-[#111009] transition-colors hover:bg-[#111009]/6 sm:block"
@@ -310,7 +308,7 @@ function Hero() {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   3. TRUST BAR
+   3. TRUST BAR — already dark, no changes needed
 ───────────────────────────────────────────────────────────────────────────── */
 const STATS = [
   { number: "2,000+",  label: "Verified specialists" },
@@ -395,11 +393,9 @@ function ProblemSection() {
             <div
               key={title}
               style={reveal(cardsInView, i * 130)}
-              className="group relative overflow-hidden rounded-xl border border-[#E5E2DA] bg-white dark:border-border dark:bg-card px-6 pb-7 pt-6 shadow-sm transition-shadow duration-300 hover:shadow-md hover:-translate-y-1"
+              className="group relative overflow-hidden rounded-xl border border-[#E5E2DA] bg-white px-6 pb-7 pt-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
             >
-              <div
-                className="absolute inset-y-0 left-0 w-[3px] bg-[#C0392B] transition-opacity duration-300 opacity-100"
-              />
+              <div className="absolute inset-y-0 left-0 w-[3px] bg-[#C0392B]" />
               <div className="font-plex-mono mb-4 text-[10px] font-semibold tracking-widest text-[#C0392B]/50">
                 {num}
               </div>
@@ -418,7 +414,7 @@ function ProblemSection() {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   5. FEATURES SECTION
+   5. FEATURES SECTION — already dark, no changes needed
 ───────────────────────────────────────────────────────────────────────────── */
 const FEATURES = [
   {
@@ -604,7 +600,7 @@ function HowItWorks() {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   7. PRODUCT MOCKUP
+   7. PRODUCT MOCKUP — already dark, no changes needed
 ───────────────────────────────────────────────────────────────────────────── */
 const REFERRAL_LIST_ITEMS = [
   { initials: "RS", name: "Rajan Sharma",  age: "58M", spec: "Dr. Menon — Cardiology",   status: "Pending",   chipCls: "bg-[#E8B86D]/15 text-[#E8B86D]",  active: true  },
@@ -781,7 +777,7 @@ function Testimonials() {
             <div
               key={name}
               style={reveal(inView, i * 150)}
-              className="flex flex-col rounded-xl border border-[#E5E2DA] bg-white dark:border-border dark:bg-card px-7 pb-7 pt-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
+              className="flex flex-col rounded-xl border border-[#E5E2DA] bg-white px-7 pb-7 pt-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
             >
               {/* Quote mark */}
               <div
@@ -815,7 +811,7 @@ function Testimonials() {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   9. FINAL CTA
+   9. FINAL CTA — teal bg, unchanged in dark mode (already vivid)
 ───────────────────────────────────────────────────────────────────────────── */
 function FinalCTA() {
   const [ref, inView] = useInView(0.2);
@@ -831,7 +827,6 @@ function FinalCTA() {
           className="animate-lp-drift-b absolute -bottom-20 right-0 h-[350px] w-[350px] rounded-full opacity-15"
           style={{ background: "radial-gradient(closest-side, #E8B86D, transparent)" }}
         />
-        {/* Dot texture */}
         <div
           className="absolute inset-0 opacity-[0.04]"
           style={{
@@ -866,7 +861,7 @@ function FinalCTA() {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   10. FOOTER
+   10. FOOTER — already dark, no changes needed
 ───────────────────────────────────────────────────────────────────────────── */
 function Footer() {
   return (
