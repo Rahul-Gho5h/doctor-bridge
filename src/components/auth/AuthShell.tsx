@@ -1,6 +1,7 @@
 import { Activity, ShieldCheck, Building2, MapPin } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { BRAND } from "@/lib/brand";
+import { ThemeToggle } from "@/components/common/ThemeToggle";
 
 interface AuthShellProps {
   /** Right-side card */
@@ -102,13 +103,18 @@ export function AuthShell({ children, heroTitle, heroSubtitle }: AuthShellProps)
 
       {/* Right — form */}
       <main
-        className="flex items-center justify-center px-4 py-12 sm:px-8"
+        className="relative flex items-start justify-center px-4 py-12 sm:px-8 min-h-screen"
         style={{
           background:
             "linear-gradient(135deg, var(--auth-side-from) 0%, var(--auth-side-to) 100%)",
         }}
       >
-        <div className="w-full max-w-md">
+        {/* Dark mode toggle — top right */}
+        <div className="absolute right-4 top-4 sm:right-6 sm:top-6">
+          <ThemeToggle />
+        </div>
+
+        <div className="w-full max-w-md mt-8 sm:mt-12 lg:mt-0 lg:my-auto">
           {/* Mobile brand */}
           <Link to="/" className="mb-8 flex items-center justify-center gap-2.5 rounded-md outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring lg:hidden">
             <div

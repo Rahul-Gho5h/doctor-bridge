@@ -13,18 +13,22 @@ export const Route = createFileRoute("/register")({
 /**
  * Fixed-height scroll container for the doctor tab.
  * Card remains exactly the same size across all steps.
- * Forms inside use `flex-1` and `mt-auto` to push action buttons
- * flush to the bottom, eliminating empty space in shorter steps.
  */
 const DOCTOR_CONTENT_CLS = "flex h-[440px] flex-col";
 
 /**
  * The hospital registration form is a 3-step form with substantially more
- * content (15 equipment checkboxes in step 2, 6 fields in step 3, etc.).
- * Allow it to scroll naturally within a capped height so the card never
- * overflows the viewport on smaller screens.
+ * content. Allow it to scroll naturally within a capped height.
  */
-const HOSPITAL_CONTENT_CLS = "max-h-[560px] overflow-y-auto pr-0.5";
+const HOSPITAL_CONTENT_CLS = "max-h-[540px] overflow-y-auto pr-0.5";
+
+/**
+ * Shared animation applied to every tab panel on entry.
+ * tab-content wrapper also gets a min-h so the card never collapses
+ * to a different height when switching tabs, preventing layout shift.
+ */
+const TAB_CONTENT_CLS =
+  "mt-4 min-h-[440px] data-[state=active]:animate-in data-[state=active]:fade-in-0 data-[state=active]:slide-in-from-bottom-2 data-[state=active]:duration-200";
 
 function RegisterPage() {
   const [tab, setTab] = useState<"doctor" | "hospital">("doctor");
@@ -41,19 +45,19 @@ function RegisterPage() {
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as "doctor" | "hospital")} className="mt-6">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="doctor" onClick={() => setTab("doctor")}>I'm a doctor</TabsTrigger>
-          <TabsTrigger value="hospital" onClick={() => setTab("hospital")}>Hospital / Clinic</TabsTrigger>
+          <TabsTrigger value="doctor">I'm a doctor</TabsTrigger>
+          <TabsTrigger value="hospital">Hospital / Clinic</TabsTrigger>
         </TabsList>
 
         {/* ── Doctor tab — fixed height, no scroll ── */}
-        <TabsContent value="doctor" className="mt-4">
+        <TabsContent value="doctor" className={TAB_CONTENT_CLS}>
           <div className={DOCTOR_CONTENT_CLS}>
             <DoctorRegisterForm />
           </div>
         </TabsContent>
 
         {/* ── Hospital / Clinic tab — scrollable, taller content ── */}
-        <TabsContent value="hospital" className="mt-4">
+        <TabsContent value="hospital" className={TAB_CONTENT_CLS}>
           <div className={HOSPITAL_CONTENT_CLS}>
             <HospitalRegistrationForm />
           </div>
