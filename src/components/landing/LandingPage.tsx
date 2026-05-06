@@ -11,6 +11,7 @@ import {
   ShieldCheck, TrendingUp, Zap,
 } from "lucide-react";
 import { BRAND } from "@/lib/brand";
+import { ThemeToggle } from "@/components/common/ThemeToggle";
 
 /* ─────────────────────────────────────────────────────────────────────────────
    HOOKS
@@ -67,7 +68,7 @@ function Navbar() {
     <nav
       className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${
         scrolled
-          ? "border-b border-[#E5E2DA] bg-[#F7F6F2]/92 backdrop-blur-md shadow-[0_1px_0_0_rgba(17,16,9,0.06)]"
+          ? "border-b border-[#E5E2DA] bg-[#F7F6F2]/92 backdrop-blur-md shadow-[0_1px_0_0_rgba(17,16,9,0.06)] dark:border-border dark:bg-background/90"
           : "border-b border-transparent"
       }`}
     >
@@ -98,9 +99,10 @@ function Navbar() {
 
         {/* Auth */}
         <div className="flex items-center gap-2">
+          <ThemeToggle />
           <Link
             to="/login"
-            className="font-plex hidden rounded-lg px-4 py-2 text-[13px] font-medium text-[#111009] transition-colors hover:bg-[#111009]/6 sm:block"
+            className="font-plex hidden rounded-lg px-4 py-2 text-[13px] font-medium text-[#111009] transition-colors hover:bg-[#111009]/6 dark:text-foreground dark:hover:bg-white/10 sm:block"
           >
             Sign in
           </Link>
