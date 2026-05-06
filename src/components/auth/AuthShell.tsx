@@ -1,7 +1,6 @@
 import { Activity, ShieldCheck, Building2, MapPin } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { BRAND } from "@/lib/brand";
-import { ThemeToggle } from "@/components/common/ThemeToggle";
 
 interface AuthShellProps {
   /** Right-side card */
@@ -118,11 +117,6 @@ export function AuthShell({ children, heroTitle, heroSubtitle }: AuthShellProps)
             "linear-gradient(135deg, var(--auth-side-from) 0%, var(--auth-side-to) 100%)",
         }}
       >
-        {/* Dark mode toggle — top right */}
-        <div className="absolute right-4 top-4 sm:right-6 sm:top-5 z-10">
-          <ThemeToggle />
-        </div>
-
         {/* Vertically centre on desktop when content is short */}
         <div className="flex min-h-full flex-col items-center justify-center">
           <div className="w-full max-w-md">

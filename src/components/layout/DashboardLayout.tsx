@@ -12,7 +12,6 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { BrandLogo } from "@/components/common/BrandLogo";
-import { ThemeToggle } from "@/components/common/ThemeToggle";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { useReminders } from "@/hooks/useReminders";
 import { toast } from "sonner";
@@ -428,7 +427,6 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           )}
 
           <div className="flex items-center gap-2 py-3">
-            <ThemeToggle />
             {authReady && <NotificationBell />}
             {authReady && (
               <Button

@@ -1,8 +1,7 @@
-/**
+﻿/**
  * Doctor Bridge — Landing Page
  * "Clinical editorial" — Instrument Serif headlines, IBM Plex Sans body,
  * IBM Plex Mono data. Warm parchment + deep ink palette.
- * Dark mode: light sections flip to deep navy; dark sections unchanged.
  */
 
 import { Link } from "@tanstack/react-router";
@@ -12,7 +11,6 @@ import {
   ShieldCheck, TrendingUp, Zap,
 } from "lucide-react";
 import { BRAND } from "@/lib/brand";
-import { ThemeToggle } from "@/components/common/ThemeToggle";
 
 /* ─────────────────────────────────────────────────────────────────────────────
    HOOKS
@@ -69,7 +67,7 @@ function Navbar() {
     <nav
       className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${
         scrolled
-          ? "border-b border-[#E5E2DA] bg-[#F7F6F2]/92 backdrop-blur-md shadow-[0_1px_0_0_rgba(17,16,9,0.06)] dark:border-[#1F3347] dark:bg-[#0C1824]/95"
+          ? "border-b border-[#E5E2DA] bg-[#F7F6F2]/92 backdrop-blur-md shadow-[0_1px_0_0_rgba(17,16,9,0.06)]"
           : "border-b border-transparent"
       }`}
     >
@@ -78,9 +76,9 @@ function Navbar() {
         <Link to="/" className="block">
           <div className="flex items-center gap-2">
             <Activity className="h-[18px] w-[18px] shrink-0 text-[#1A7A6E]" strokeWidth={2.5} />
-            <span className="font-instrument text-[19px] leading-none text-[#111009] dark:text-white">{BRAND.name}</span>
+            <span className="font-instrument text-[19px] leading-none text-[#111009]">{BRAND.name}</span>
           </div>
-          <span className="font-plex-mono mt-0.5 block pl-[26px] text-[9px] uppercase tracking-[0.2em] text-[#4A4740]/50 dark:text-[#4A6070]">
+          <span className="font-plex-mono mt-0.5 block pl-[26px] text-[9px] uppercase tracking-[0.2em] text-[#4A4740]/50">
             {BRAND.tagline}
           </span>
         </Link>
@@ -91,7 +89,7 @@ function Navbar() {
             <a
               key={label}
               href={`#${label.toLowerCase().replace(/\s+/g, "-")}`}
-              className="font-plex text-[13px] font-medium text-[#4A4740] transition-colors hover:text-[#1A7A6E] dark:text-[#8BA4B4] dark:hover:text-[#1A7A6E]"
+              className="font-plex text-[13px] font-medium text-[#4A4740] transition-colors hover:text-[#1A7A6E]"
             >
               {label}
             </a>
@@ -100,10 +98,9 @@ function Navbar() {
 
         {/* Auth */}
         <div className="flex items-center gap-2">
-          <ThemeToggle />
           <Link
             to="/login"
-            className="font-plex hidden rounded-lg px-4 py-2 text-[13px] font-medium text-[#111009] transition-colors hover:bg-[#111009]/6 dark:text-white dark:hover:bg-white/10 sm:block"
+            className="font-plex hidden rounded-lg px-4 py-2 text-[13px] font-medium text-[#111009] transition-colors hover:bg-[#111009]/6 sm:block"
           >
             Sign in
           </Link>
@@ -199,7 +196,7 @@ function Hero() {
   const cityStr = CITIES.join("  ·  ") + "  ·  ";
 
   return (
-    <section className="relative overflow-hidden bg-[#F7F6F2] px-6 pb-20 pt-28 dark:bg-[#0C1824]">
+    <section className="relative overflow-hidden bg-[#F7F6F2] px-6 pb-20 pt-28">
       {/* ── Animated background layer ── */}
       <div className="pointer-events-none absolute inset-0">
         {/* Fine grid */}
@@ -245,7 +242,7 @@ function Hero() {
 
           {/* Headline */}
           <h1
-            className="lp-fade font-instrument mt-6 leading-[1.05] tracking-tight text-[#111009] dark:text-white"
+            className="lp-fade font-instrument mt-6 leading-[1.05] tracking-tight text-[#111009]"
             style={{ fontSize: "clamp(44px, 5.5vw, 68px)", animationDelay: "90ms" }}
           >
             Stop losing patients
@@ -255,7 +252,7 @@ function Hero() {
 
           {/* Subheadline */}
           <p
-            className="lp-fade font-plex mt-5 max-w-[480px] leading-[1.7] text-[#4A4740] dark:text-[#8BA4B4]"
+            className="lp-fade font-plex mt-5 max-w-[480px] leading-[1.7] text-[#4A4740]"
             style={{ fontSize: "clamp(15px, 1.4vw, 17px)", animationDelay: "200ms" }}
           >
             A verified network of NMC-registered specialists. Search by
@@ -276,7 +273,7 @@ function Hero() {
             </Link>
             <a
               href="#how-it-works"
-              className="font-plex text-[13px] font-medium text-[#4A4740] underline-offset-4 transition-colors hover:text-[#1A7A6E] hover:underline dark:text-[#8BA4B4] dark:hover:text-[#1A7A6E]"
+              className="font-plex text-[13px] font-medium text-[#4A4740] underline-offset-4 transition-colors hover:text-[#1A7A6E] hover:underline"
             >
               See a walkthrough →
             </a>
@@ -287,11 +284,11 @@ function Hero() {
             className="lp-fade mt-8 w-full"
             style={{ animationDelay: "420ms" }}
           >
-            <p className="font-plex-mono mb-1.5 text-[9px] uppercase tracking-[0.2em] text-[#4A4740]/40 dark:text-[#4A6070]">
+            <p className="font-plex-mono mb-1.5 text-[9px] uppercase tracking-[0.2em] text-[#4A4740]/40">
               Used by doctors in
             </p>
             <div className="max-w-xs overflow-hidden lg:max-w-sm">
-              <div className="animate-lp-marquee font-plex-mono text-[11px] text-[#4A4740]/50 dark:text-[#4A6070]">
+              <div className="animate-lp-marquee font-plex-mono text-[11px] text-[#4A4740]/50">
                 {cityStr}{cityStr}
               </div>
             </div>
@@ -374,19 +371,19 @@ function ProblemSection() {
   const [cardsRef, cardsInView] = useInView();
 
   return (
-    <section className="bg-[#F7F6F2] px-6 py-20 dark:bg-[#0A111A]">
+    <section className="bg-[#F7F6F2] px-6 py-20">
       <div className="mx-auto max-w-5xl">
         <div ref={headerRef} className="mb-12 text-center" style={reveal(headerInView)}>
           <div className="font-plex-mono mb-3 text-[10px] uppercase tracking-[0.22em] text-[#C0392B]">
             The problem
           </div>
           <h2
-            className="font-instrument leading-[1.1] text-[#111009] dark:text-white"
+            className="font-instrument leading-[1.1] text-[#111009]"
             style={{ fontSize: "clamp(26px, 3.5vw, 42px)" }}
           >
             Referrals in India still run on WhatsApp.
           </h2>
-          <p className="font-plex mx-auto mt-4 max-w-xl text-[14px] leading-relaxed text-[#4A4740] dark:text-[#8BA4B4]">
+          <p className="font-plex mx-auto mt-4 max-w-xl text-[14px] leading-relaxed text-[#4A4740]">
             There is no structured system. No accountability. No record of what happens after the patient walks out.
           </p>
         </div>
@@ -396,16 +393,16 @@ function ProblemSection() {
             <div
               key={title}
               style={reveal(cardsInView, i * 130)}
-              className="group relative overflow-hidden rounded-xl border border-[#E5E2DA] bg-white px-6 pb-7 pt-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md dark:border-[#1F3347] dark:bg-[#132030]"
+              className="group relative overflow-hidden rounded-xl border border-[#E5E2DA] bg-white px-6 pb-7 pt-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
             >
               <div className="absolute inset-y-0 left-0 w-[3px] bg-[#C0392B]" />
               <div className="font-plex-mono mb-4 text-[10px] font-semibold tracking-widest text-[#C0392B]/50">
                 {num}
               </div>
-              <h3 className="font-plex text-[14px] font-semibold leading-snug text-[#111009] dark:text-white">
+              <h3 className="font-plex text-[14px] font-semibold leading-snug text-[#111009]">
                 {title}
               </h3>
-              <p className="font-plex mt-3 text-[13px] leading-[1.7] text-[#4A4740] dark:text-[#8BA4B4]">
+              <p className="font-plex mt-3 text-[13px] leading-[1.7] text-[#4A4740]">
                 {body}
               </p>
             </div>
@@ -554,14 +551,14 @@ const STEPS = [
 function HowItWorks() {
   const [ref, inView] = useInView(0.15);
   return (
-    <section id="how-it-works" className="bg-[#F7F6F2] px-6 py-20 dark:bg-[#0A111A]">
+    <section id="how-it-works" className="bg-[#F7F6F2] px-6 py-20">
       <div className="mx-auto max-w-5xl">
         <div style={reveal(inView)} className="mb-14 text-center">
           <div className="font-plex-mono mb-3 text-[10px] uppercase tracking-[0.22em] text-[#1A7A6E]">
             How it works
           </div>
           <h2
-            className="font-instrument leading-[1.1] text-[#111009] dark:text-white"
+            className="font-instrument leading-[1.1] text-[#111009]"
             style={{ fontSize: "clamp(26px, 3.5vw, 42px)" }}
           >
             A referral in four steps.
@@ -586,13 +583,13 @@ function HowItWorks() {
               >
                 {/* Pop-in step dot */}
                 <div
-                  className={`relative z-10 flex h-10 w-10 items-center justify-center rounded-full border-2 border-[#1A7A6E] bg-[#F7F6F2] shadow-[0_0_0_4px_#F7F6F2] dark:bg-[#0A111A] dark:shadow-[0_0_0_4px_#0A111A] ${inView ? "animate-lp-pop" : "opacity-0"}`}
+                  className={`relative z-10 flex h-10 w-10 items-center justify-center rounded-full border-2 border-[#1A7A6E] bg-[#F7F6F2] shadow-[0_0_0_4px_#F7F6F2] ${inView ? "animate-lp-pop" : "opacity-0"}`}
                   style={{ animationDelay: `${250 + i * 140}ms` }}
                 >
                   <span className="font-plex-mono text-[11px] font-semibold text-[#1A7A6E]">{n}</span>
                 </div>
-                <h3 className="font-instrument mt-5 text-[18px] leading-snug text-[#111009] dark:text-white">{title}</h3>
-                <p className="font-plex mt-2 text-[13px] leading-[1.65] text-[#4A4740] dark:text-[#8BA4B4]">{body}</p>
+                <h3 className="font-instrument mt-5 text-[18px] leading-snug text-[#111009]">{title}</h3>
+                <p className="font-plex mt-2 text-[13px] leading-[1.65] text-[#4A4740]">{body}</p>
               </div>
             ))}
           </div>
@@ -761,14 +758,14 @@ const TESTIMONIALS = [
 function Testimonials() {
   const [ref, inView] = useInView();
   return (
-    <section className="bg-[#F7F6F2] px-6 py-20 dark:bg-[#0A111A]">
+    <section className="bg-[#F7F6F2] px-6 py-20">
       <div className="mx-auto max-w-4xl">
         <div style={reveal(inView)} className="mb-12 text-center">
           <div className="font-plex-mono mb-3 text-[10px] uppercase tracking-[0.22em] text-[#1A7A6E]">
             From the network
           </div>
           <h2
-            className="font-instrument leading-[1.1] text-[#111009] dark:text-white"
+            className="font-instrument leading-[1.1] text-[#111009]"
             style={{ fontSize: "clamp(26px, 3.5vw, 42px)" }}
           >
             Doctors who've made the switch.
@@ -780,7 +777,7 @@ function Testimonials() {
             <div
               key={name}
               style={reveal(inView, i * 150)}
-              className="flex flex-col rounded-xl border border-[#E5E2DA] bg-white px-7 pb-7 pt-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md dark:border-[#1F3347] dark:bg-[#132030]"
+              className="flex flex-col rounded-xl border border-[#E5E2DA] bg-white px-7 pb-7 pt-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
             >
               {/* Quote mark */}
               <div
@@ -791,18 +788,18 @@ function Testimonials() {
               </div>
 
               {/* Quote body */}
-              <p className="font-plex flex-1 text-[15px] leading-[1.7] text-[#111009] dark:text-[#C8D8E4]">
+              <p className="font-plex flex-1 text-[15px] leading-[1.7] text-[#111009]">
                 {quote}
               </p>
 
               {/* Attribution */}
-              <div className="mt-6 flex items-center gap-3 border-t border-[#E5E2DA] pt-5 dark:border-[#1F3347]">
+              <div className="mt-6 flex items-center gap-3 border-t border-[#E5E2DA] pt-5">
                 <div className="font-plex-mono flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#1A7A6E]/10 text-[12px] font-semibold text-[#1A7A6E]">
                   {initials}
                 </div>
                 <div>
-                  <div className="font-plex text-[13px] font-semibold text-[#111009] dark:text-white">{name}</div>
-                  <div className="font-plex-mono mt-0.5 text-[10px] text-[#4A4740]/70 dark:text-[#4A6070]">{role}</div>
+                  <div className="font-plex text-[13px] font-semibold text-[#111009]">{name}</div>
+                  <div className="font-plex-mono mt-0.5 text-[10px] text-[#4A4740]/70">{role}</div>
                 </div>
               </div>
             </div>
