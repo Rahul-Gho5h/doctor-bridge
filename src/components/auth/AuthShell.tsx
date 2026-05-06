@@ -14,15 +14,21 @@ interface AuthShellProps {
 
 /**
  * Split-screen auth layout:
- *  - Left: deep navy hero with radial teal glow, brand mark top, 3 footer pills
- *  - Right: soft mint gradient with a centered floating white card
+ *  - Left: deep navy hero — fixed 50 % column, never resizes
+ *  - Right: soft mint gradient — scrolls internally so the left panel
+ *    is completely isolated from card-height changes
+ *
+ * Both columns are locked to 100 vh via `h-screen overflow-hidden` on
+ * the grid wrapper plus `h-full overflow-y-auto` on each panel.
  */
 export function AuthShell({ children, heroTitle, heroSubtitle }: AuthShellProps) {
   return (
-    <div className="grid min-h-screen grid-cols-1 lg:grid-cols-2">
-      {/* Left — hero */}
+    /* Lock the grid to exactly the viewport — columns can't grow taller */
+    <div className="grid h-screen grid-cols-1 overflow-hidden lg:grid-cols-2">
+
+      {/* ── Left — hero (hidden on mobile) ── */}
       <aside
-        className="relative hidden flex-col justify-between overflow-hidden px-12 py-10 lg:flex"
+        className="relative hidden h-full flex-col justify-between overflow-hidden px-12 py-10 lg:flex"
         style={{
           backgroundColor: "var(--auth-hero-bg)",
           color: "var(--auth-hero-fg)",
@@ -47,7 +53,10 @@ export function AuthShell({ children, heroTitle, heroSubtitle }: AuthShellProps)
         />
 
         {/* Brand */}
-        <Link to="/" className="relative z-10 flex items-center gap-3 rounded-md outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-white/50">
+        <Link
+          to="/"
+          className="relative z-10 flex items-center gap-3 rounded-md outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-white/50"
+        >
           <div
             className="flex h-12 w-12 items-center justify-center rounded-xl shadow-lg"
             style={{
@@ -101,37 +110,43 @@ export function AuthShell({ children, heroTitle, heroSubtitle }: AuthShellProps)
         </div>
       </aside>
 
-      {/* Right — form */}
+      {/* ── Right — scrollable form panel ── */}
       <main
-        className="relative flex items-start justify-center px-4 py-12 sm:px-8 min-h-screen"
+        className="relative h-full overflow-y-auto px-4 py-12 sm:px-8"
         style={{
           background:
             "linear-gradient(135deg, var(--auth-side-from) 0%, var(--auth-side-to) 100%)",
         }}
       >
         {/* Dark mode toggle — top right */}
-        <div className="absolute right-4 top-4 sm:right-6 sm:top-6">
+        <div className="absolute right-4 top-4 sm:right-6 sm:top-5 z-10">
           <ThemeToggle />
         </div>
 
-        <div className="w-full max-w-md mt-8 sm:mt-12 lg:mt-0 lg:my-auto">
-          {/* Mobile brand */}
-          <Link to="/" className="mb-8 flex items-center justify-center gap-2.5 rounded-md outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring lg:hidden">
-            <div
-              className="flex h-10 w-10 items-center justify-center rounded-lg"
-              style={{
-                background:
-                  "linear-gradient(135deg, var(--auth-teal), oklch(0.55 0.14 175))",
-                color: "var(--auth-teal-foreground)",
-              }}
+        {/* Vertically centre on desktop when content is short */}
+        <div className="flex min-h-full flex-col items-center justify-center">
+          <div className="w-full max-w-md">
+            {/* Mobile brand */}
+            <Link
+              to="/"
+              className="mb-8 flex items-center justify-center gap-2.5 rounded-md outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring lg:hidden"
             >
-              <Activity className="h-5 w-5" strokeWidth={2.5} />
-            </div>
-            <div className="text-base font-semibold tracking-tight">{BRAND.name}</div>
-          </Link>
+              <div
+                className="flex h-10 w-10 items-center justify-center rounded-lg"
+                style={{
+                  background:
+                    "linear-gradient(135deg, var(--auth-teal), oklch(0.55 0.14 175))",
+                  color: "var(--auth-teal-foreground)",
+                }}
+              >
+                <Activity className="h-5 w-5" strokeWidth={2.5} />
+              </div>
+              <div className="text-base font-semibold tracking-tight">{BRAND.name}</div>
+            </Link>
 
-          <div className="rounded-2xl border bg-card p-8 shadow-elevated">
-            {children}
+            <div className="rounded-2xl border bg-card p-8 shadow-elevated">
+              {children}
+            </div>
           </div>
         </div>
       </main>
