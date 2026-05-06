@@ -193,7 +193,11 @@
 
 @layer base {
   * { border-color: var(--color-border); }
-  html { font-family: var(--font-sans); }
+  html {
+    font-family: var(--font-sans);
+    /* Prevent layout shift when page scrollbar appears/disappears */
+    scrollbar-gutter: stable;
+  }
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
